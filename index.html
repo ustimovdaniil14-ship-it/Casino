@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Игры</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://staticgram.top/js/telegram-web-app.js"></script>
 <style>
   :root {
     --bg: #070a18;
@@ -537,15 +537,27 @@ function customDeposit() {
   tg.openTelegramLink('https://t.me/' + CFG.BOT + '?start=custom');
   setTimeout(() => { try { tg.close(); } catch (e) {} }, 300);
 }
+async function depositViaChat(a) {
+  try {
+    await apiCall('/deposit_chat', { amount: a });
+    toast('Счёт отправлен в чат с ботом. Оплати его там');
+    setTimeout(() => { try { tg.close(); } catch (e) {} }, 900);
+  } catch (e) { toast(e.message, true); openDeposit(); }
+}
 async function startDeposit(a) {
   if (REMOTE) {
     try {
       const r = await apiCall('/deposit', { amount: a });
-      tg.openInvoice(r.link, async st => {
+      const onSt = async st => {
         if (st === 'paid') { await syncState(); popBalance(); haptic('success'); const op = (S.ops || []).find(o => o.k === 'dep'); if (op) openReceipt(op, 'Пополнение зачислено'); else { closeSheet(); toast('Пополнение зачислено'); } }
         else if (st === 'failed') toast('Платёж не прошёл', true);
         else openDeposit();
-      });
+      };
+      const slug = (r.link.match(/invoice\/([^/?#]+)/) || [])[1];
+      const variants = [r.link]; if (slug) variants.push('https://t.me/$' + slug);
+      let opened = false;
+      for (const v of variants) { try { tg.openInvoice(v, onSt); opened = true; break; } catch (e) {} }
+      if (!opened) await depositViaChat(a);
     } catch (e) { toast(e.message, true); openDeposit(); }
     return;
   }
