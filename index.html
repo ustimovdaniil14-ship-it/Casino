@@ -412,7 +412,7 @@ async function apiCall(path, body) {
   if (!r.ok) throw new Error(j.error || 'Ошибка сервера');
   return j;
 }
-async function syncState() { if (!REMOTE) return; try { const r = await apiCall('/state'); Object.assign(S, r.state); render(); } catch (e) { toast('Нет связи с сервером', true); } }
+async function syncState() { if (!REMOTE) return; try { const r = await apiCall('/state'); Object.assign(S, r.state); render(); } catch (e) { toast('Нет связи: ' + ((e && e.message) || e), true); } }
 
 /* ---------- утилиты ---------- */
 function rndInt(n) { const a = new Uint32Array(1), lim = Math.floor(4294967296 / n) * n; do { crypto.getRandomValues(a); } while (a[0] >= lim); return a[0] % n; }
