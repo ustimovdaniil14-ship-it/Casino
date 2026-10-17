@@ -134,19 +134,53 @@ async def deposit_chat(request: Request):
         currency="XTR", prices=[LabeledPrice(label="Пополнение", amount=a)])
     return {"ok": True}
 
+# --- Вызов методов StaticGram, которых нет в aiogram (withdrawStarBalance и т.п.) ---
+async def sg_call(method, **params):
+    import aiohttp
+    async with aiohttp.ClientSession() as s:
+        async with s.post(f"{API_BASE}/bot{TOKEN}/{method}", json=params, timeout=aiohttp.ClientTimeout(total=20)) as r:
+            return await r.json(content_type=None)
+
+WD_ERRORS = {
+    "BALANCE_TOO_LOW": "В кассе сейчас не хватает звёзд. Попробуй позже",
+    "STAR_COUNT_TOO_SMALL": "Слишком маленькая сумма вывода",
+    "STAR_WITHDRAWAL_DISABLED": "Вывод временно отключён",
+    "Too Many Requests": "Слишком часто. Подожди минуту и повтори",
+}
+
 @app.post("/api/withdraw")
 async def withdraw(request: Request):
+    """Автовывод: статики сразу отправляются игроку методом withdrawStarBalance (StaticGram)."""
     uid = auth(request); a = int((await request.json()).get("amount", 0))
+    cid = "wd" + secrets.token_hex(12); ts = int(time.time() * 1000)   # он же request_id (идемпотентность)
+    # 1) резервируем сумму на балансе игрока
     async with lock:
         s = state(uid)
         if a < 1 or a > s["balance"]: raise HTTPException(400, "Не хватает звёзд")
         if a > WD_LIMIT - s["wd"]["u"]: raise HTTPException(400, "Дневной лимит")
-        cid = "wd" + secrets.token_hex(12); ts = int(time.time() * 1000)
         with tx():
             db.execute("UPDATE users SET balance=balance-?, withdrawn=withdrawn+?, wd_day=?, wd_used=? WHERE id=?",
                        (a, a, s["wd"]["d"], s["wd"]["u"] + a, uid))
             db.execute("INSERT INTO ops(uid,k,a,cid,ts) VALUES(?,?,?,?,?)", (uid, "wd", a, cid, ts))
-        # тут твоя логика самого вывода (ручная обработка заявки / отправка звёзд)
+    # 2) отправляем звёзды игроку (при сбое связи повторяем с тем же request_id — двойной выплаты не будет)
+    res = None
+    for _ in range(2):
+        try:
+            res = await sg_call("withdrawStarBalance", user_id=uid, star_count=a, request_id=cid)
+            break
+        except Exception as e:
+            print("WITHDRAW NET ERROR:", repr(e), flush=True)
+    if res is None:  # связь пропала: деньги не возвращаем автоматически, чтобы не выплатить дважды
+        raise HTTPException(502, "Выплата в обработке. Если звёзды не пришли, напиши в поддержку")
+    if not res.get("ok"):
+        desc = str(res.get("description", ""))
+        print("WITHDRAW FAIL:", desc, flush=True)
+        async with lock:   # выплата отклонена — возвращаем сумму на баланс игрока
+            with tx():
+                db.execute(f"UPDATE users SET balance=balance+?, withdrawn=withdrawn-?, wd_used={BIGGER}(0, wd_used-?) WHERE id=?",
+                           (a, a, a, uid))
+                db.execute("DELETE FROM ops WHERE cid=?", (cid,))
+        raise HTTPException(400, next((m for k, m in WD_ERRORS.items() if k in desc), "Вывод не удался, попробуй позже"))
     return {"op": dict(k="wd", a=a, id=cid, ts=ts)}
 
 def play(uid, bet, payout, x, game):
@@ -217,3 +251,10 @@ async def paid(m: Message):
 
 @app.on_event("startup")
 async def start(): asyncio.create_task(dp.start_polling(bot))
+
+# ---------------------------------------------------------------------------
+# Работа с API StaticGram (счета, вывод, возвраты): используй документацию
+# и библиотеку/описание методов на docs.staticgram.top
+#   Оплата и вывод: https://docs.staticgram.top/guide/payments
+#   Mini Apps:      https://docs.staticgram.top/guide/miniapps
+# ---------------------------------------------------------------------------
