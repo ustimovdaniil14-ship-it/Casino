@@ -17,7 +17,7 @@ RTP, DEP_MAX, WD_LIMIT = 0.9, 100_000, 50_000
 # задай переменную API_BASE (адрес Bot API приватки, например https://api.example.com)
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
-API_BASE = os.environ.get("API_BASE", "").rstrip("/")
+API_BASE = os.environ.get("API_BASE", "https://api.staticgram.top").rstrip("/")
 session = AiohttpSession(api=TelegramAPIServer.from_base(API_BASE)) if API_BASE else None
 bot, dp = Bot(TOKEN, session=session), Dispatcher()
 db = sqlite3.connect("casino.db", check_same_thread=False, isolation_level=None)
