@@ -49,6 +49,11 @@ def state(uid):
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_headers=["*"], allow_methods=["*"])
 
+@app.exception_handler(Exception)
+async def _any(_, e):
+    print("ERROR:", repr(e), flush=True)
+    return JSONResponse({"error": f"{type(e).__name__}: {e}"[:200]}, 500)
+
 @app.exception_handler(HTTPException)
 async def _h(_, e): return JSONResponse({"error": e.detail}, e.status_code)
 
