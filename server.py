@@ -1,6 +1,6 @@
 # pip install fastapi uvicorn aiogram==3.*
 # BOT_TOKEN=... uvicorn server:app --host 0.0.0.0 --port 8000
-import os, hmac, hashlib, json, time, sqlite3, secrets, asyncio, contextlib
+import os, hmac, hashlib, json, time, secrets, asyncio, contextlib
 from urllib.parse import parse_qsl
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
@@ -20,15 +20,61 @@ from aiogram.client.telegram import TelegramAPIServer
 API_BASE = os.environ.get("API_BASE", "https://api.staticgram.top").rstrip("/")
 session = AiohttpSession(api=TelegramAPIServer.from_base(API_BASE)) if API_BASE else None
 bot, dp = Bot(TOKEN, session=session), Dispatcher()
-db = sqlite3.connect("casino.db", check_same_thread=False, isolation_level=None)
-db.row_factory = sqlite3.Row
-db.executescript("""
-CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, balance INTEGER DEFAULT 0, deposited INTEGER DEFAULT 0,
-  withdrawn INTEGER DEFAULT 0, won_total INTEGER DEFAULT 0, played INTEGER DEFAULT 0, won INTEGER DEFAULT 0,
-  wagered INTEGER DEFAULT 0, best INTEGER DEFAULT 0, wd_day TEXT DEFAULT '', wd_used INTEGER DEFAULT 0);
-CREATE TABLE IF NOT EXISTS ops(n INTEGER PRIMARY KEY AUTOINCREMENT, uid INTEGER, k TEXT, a INTEGER, b INTEGER,
-  p INTEGER, x REAL, g TEXT, cid TEXT UNIQUE, ts INTEGER);
-""")
+# --- База данных ---
+# DATABASE_URL задан  -> Postgres (бесплатные Neon / Supabase), данные не пропадают
+# DATABASE_URL пуст   -> файл SQLite (на бесплатном Render он стирается при перезапуске!)
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+PG = DATABASE_URL.startswith("postgres")
+if PG:
+    import psycopg
+    from psycopg.rows import dict_row
+    def _connect():
+        return psycopg.connect(DATABASE_URL, autocommit=True, row_factory=dict_row, connect_timeout=10)
+else:
+    import sqlite3
+    def _connect():
+        c = sqlite3.connect(os.environ.get("DB_PATH", "casino.db"), check_same_thread=False, isolation_level=None)
+        c.row_factory = sqlite3.Row
+        return c
+
+class DB:
+    def __init__(self): self.c = _connect()
+    def execute(self, sql, params=()):
+        if PG: sql = sql.replace("?", "%s")
+        for attempt in (0, 1):
+            try:
+                return self.c.execute(sql, params)
+            except Exception as e:
+                # соединение с облачной базой могло закрыться — переподключаемся и пробуем ещё раз
+                if PG and attempt == 0 and isinstance(e, (psycopg.OperationalError, psycopg.InterfaceError)):
+                    self.c = _connect(); continue
+                raise
+
+db = DB()
+INT = "BIGINT" if PG else "INTEGER"
+SERIAL = "BIGSERIAL PRIMARY KEY" if PG else "INTEGER PRIMARY KEY AUTOINCREMENT"
+REAL = "DOUBLE PRECISION" if PG else "REAL"
+BIGGER = "GREATEST" if PG else "MAX"
+for stmt in (
+    f"CREATE TABLE IF NOT EXISTS users(id {INT} PRIMARY KEY, balance {INT} DEFAULT 0, deposited {INT} DEFAULT 0,"
+    f" withdrawn {INT} DEFAULT 0, won_total {INT} DEFAULT 0, played {INT} DEFAULT 0, won {INT} DEFAULT 0,"
+    f" wagered {INT} DEFAULT 0, best {INT} DEFAULT 0, wd_day TEXT DEFAULT '', wd_used {INT} DEFAULT 0)",
+    f"CREATE TABLE IF NOT EXISTS ops(n {SERIAL}, uid {INT}, k TEXT, a {INT}, b {INT}, p {INT}, x {REAL},"
+    f" g TEXT, cid TEXT UNIQUE, ts {INT})",
+    "CREATE INDEX IF NOT EXISTS ops_uid ON ops(uid, n)",
+):
+    db.execute(stmt)
+
+@contextlib.contextmanager
+def tx():
+    db.execute("BEGIN")
+    try:
+        yield
+    except BaseException:
+        db.execute("ROLLBACK"); raise
+    else:
+        db.execute("COMMIT")
+
 lock = asyncio.Lock()
 
 def auth(request: Request) -> int:
@@ -40,7 +86,7 @@ def auth(request: Request) -> int:
         raise HTTPException(401, "bad initData")
     if time.time() - int(d.get("auth_date", 0)) > 86400: raise HTTPException(401, "expired")
     uid = json.loads(d["user"])["id"]
-    db.execute("INSERT OR IGNORE INTO users(id) VALUES(?)", (uid,))
+    db.execute("INSERT INTO users(id) VALUES(?) ON CONFLICT DO NOTHING", (uid,))
     return uid
 
 def state(uid):
@@ -63,6 +109,9 @@ async def _any(_, e):
 @app.exception_handler(HTTPException)
 async def _h(_, e): return JSONResponse({"error": e.detail}, e.status_code)
 
+@app.get("/health")
+async def health(): return {"ok": True}
+
 @app.get("/")
 async def index(): return FileResponse("index.html")  # мини-апп отдаётся с этого же сервера
 
@@ -77,6 +126,14 @@ async def deposit(request: Request):
         currency="XTR", prices=[LabeledPrice(label="Пополнение", amount=a)])
     return {"link": link}
 
+@app.post("/api/deposit_chat")
+async def deposit_chat(request: Request):
+    uid = auth(request); a = int((await request.json()).get("amount", 0))
+    if not 1 <= a <= DEP_MAX: raise HTTPException(400, "Неверная сумма")
+    await bot.send_invoice(chat_id=uid, title="Пополнение", description=f"{a} звёзд", payload=f"dep:{uid}:{a}",
+        currency="XTR", prices=[LabeledPrice(label="Пополнение", amount=a)])
+    return {"ok": True}
+
 @app.post("/api/withdraw")
 async def withdraw(request: Request):
     uid = auth(request); a = int((await request.json()).get("amount", 0))
@@ -85,18 +142,20 @@ async def withdraw(request: Request):
         if a < 1 or a > s["balance"]: raise HTTPException(400, "Не хватает звёзд")
         if a > WD_LIMIT - s["wd"]["u"]: raise HTTPException(400, "Дневной лимит")
         cid = "wd" + secrets.token_hex(12); ts = int(time.time() * 1000)
-        db.execute("UPDATE users SET balance=balance-?, withdrawn=withdrawn+?, wd_day=?, wd_used=? WHERE id=?",
-                   (a, a, s["wd"]["d"], s["wd"]["u"] + a, uid))
-        db.execute("INSERT INTO ops(uid,k,a,cid,ts) VALUES(?,?,?,?,?)", (uid, "wd", a, cid, ts))
+        with tx():
+            db.execute("UPDATE users SET balance=balance-?, withdrawn=withdrawn+?, wd_day=?, wd_used=? WHERE id=?",
+                       (a, a, s["wd"]["d"], s["wd"]["u"] + a, uid))
+            db.execute("INSERT INTO ops(uid,k,a,cid,ts) VALUES(?,?,?,?,?)", (uid, "wd", a, cid, ts))
         # тут твоя логика самого вывода (ручная обработка заявки / отправка звёзд)
     return {"op": dict(k="wd", a=a, id=cid, ts=ts)}
 
 def play(uid, bet, payout, x, game):
-    db.execute("UPDATE users SET balance=balance-?+?, played=played+1, wagered=wagered+?, won_total=won_total+?,"
-               " won=won+?, best=MAX(best,?) WHERE id=?",
-               (bet, payout, bet, payout, 1 if payout > bet else 0, max(0, payout - bet), uid))
-    db.execute("INSERT INTO ops(uid,k,g,b,p,x,ts) VALUES(?,?,?,?,?,?,?)", (uid, "game", game, bet, payout, x, int(time.time() * 1000)))
-    return db.execute("SELECT balance FROM users WHERE id=?", (uid,)).fetchone()[0]
+    with tx():
+        db.execute("UPDATE users SET balance=balance-?+?, played=played+1, wagered=wagered+?, won_total=won_total+?,"
+                   f" won=won+?, best={BIGGER}(best,?) WHERE id=?",
+                   (bet, payout, bet, payout, 1 if payout > bet else 0, max(0, payout - bet), uid))
+        db.execute("INSERT INTO ops(uid,k,g,b,p,x,ts) VALUES(?,?,?,?,?,?,?)", (uid, "game", game, bet, payout, x, int(time.time() * 1000)))
+    return db.execute("SELECT balance FROM users WHERE id=?", (uid,)).fetchone()["balance"]
 
 @app.post("/api/wheel")
 async def wheel(request: Request):
@@ -148,12 +207,12 @@ async def pre(q: PreCheckoutQuery): await q.answer(ok=True)
 async def paid(m: Message):
     p = m.successful_payment; a = p.total_amount
     async with lock:
-        db.execute("INSERT OR IGNORE INTO users(id) VALUES(?)", (m.from_user.id,))
-        try:
-            db.execute("INSERT INTO ops(uid,k,a,cid,ts) VALUES(?,?,?,?,?)",
-                       (m.from_user.id, "dep", a, p.telegram_payment_charge_id, int(time.time() * 1000)))
-        except sqlite3.IntegrityError: return  # этот платёж уже зачислен
-        db.execute("UPDATE users SET balance=balance+?, deposited=deposited+? WHERE id=?", (a, a, m.from_user.id))
+        db.execute("INSERT INTO users(id) VALUES(?) ON CONFLICT DO NOTHING", (m.from_user.id,))
+        with tx():
+            cur = db.execute("INSERT INTO ops(uid,k,a,cid,ts) VALUES(?,?,?,?,?) ON CONFLICT (cid) DO NOTHING",
+                             (m.from_user.id, "dep", a, p.telegram_payment_charge_id, int(time.time() * 1000)))
+            if cur.rowcount == 0: return  # этот платёж уже зачислен
+            db.execute("UPDATE users SET balance=balance+?, deposited=deposited+? WHERE id=?", (a, a, m.from_user.id))
     await m.answer(f"✅ Пополнение зачислено: {a} ⭐\nОткрой мини-апп, чтобы играть.")
 
 @app.on_event("startup")
