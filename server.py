@@ -242,32 +242,6 @@ def play(uid, bet, payout, x, game):
         db.execute("INSERT INTO ops(uid,k,g,b,p,x,ts) VALUES(?,?,?,?,?,?,?)", (uid, "game", game, bet, payout, x, int(time.time() * 1000)))
     return db.execute("SELECT balance FROM users WHERE id=?", (uid,)).fetchone()["balance"]
 
-@app.post("/api/wheel")
-async def wheel(request: Request):
-    uid = auth(request); j = await request.json(); bet = int(j["bet"]); x = round(float(j["x"]), 2)
-    if not 2 <= x <= 100: raise HTTPException(400, "Неверный множитель")
-    if bet > MAX_BET: raise bet_err()
-    if bet * x > WIN_CAP: raise cap_err()
-    async with lock:
-        if bet < 1 or bet > state(uid)["balance"]: raise HTTPException(400, "Не хватает звёзд")
-        gate(uid)   # пауза между ставками считается только для принятой ставки
-        win = secrets.SystemRandom().random() < RTP / x
-        bal = play(uid, bet, int(bet * x) if win else 0, x, "wheel")
-    return {"win": win, "balance": bal}
-
-@app.post("/api/upgrade")
-async def upgrade(request: Request):
-    uid = auth(request); j = await request.json(); bet = int(j["bet"]); x = round(float(j["x"]), 2)
-    if not 2.12 <= x <= 100: raise HTTPException(400, "Неверный множитель")
-    if bet > MAX_BET: raise bet_err()
-    if bet * x > WIN_CAP: raise cap_err()
-    async with lock:
-        if bet < 1 or bet > state(uid)["balance"]: raise HTTPException(400, "Не хватает звёзд")
-        gate(uid)   # пауза между ставками считается только для принятой ставки
-        win = secrets.SystemRandom().random() < RTP / x
-        bal = play(uid, bet, int(bet * x) if win else 0, x, "upgrade")
-    return {"win": win, "balance": bal}
-
 # ---- Промокоды ----
 def norm_code(x):
     c = (x or "").strip().upper()

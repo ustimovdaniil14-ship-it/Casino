@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Игры</title>
+<title>Кейсы</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@500;600;700;800&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet">
 <script src="https://staticgram.top/js/telegram-web-app.js"></script>
@@ -183,6 +183,8 @@ body[data-view="cases"] .app{padding-bottom:calc(30px + env(safe-area-inset-bott
 .cs-res{text-align:center;min-height:26px;font-size:16px;margin:10px 0}
 .cs-sell{display:flex;align-items:center;gap:10px}
 .cs-sell .pbtn{padding:8px 12px;font-size:13px}
+#nav{display:none}
+#v-wheel,#v-upgrade{display:none!important}
 </style>
 </head>
 <body>
@@ -215,7 +217,7 @@ body[data-view="cases"] .app{padding-bottom:calc(30px + env(safe-area-inset-bott
   <div class="testbar" id="testbar" hidden>Тестовый режим: пополнение и вывод проходят без реальных платежей, всё хранится на этом телефоне</div>
 
   <!-- КОЛЕСО -->
-  <section class="view on" id="v-wheel">
+  <section class="view" id="v-wheel">
     <div class="strip" id="whStrip"></div>
     <div class="stage" id="stWheel">
       <div class="wheel-wrap" id="wheelWrap">
@@ -290,7 +292,7 @@ body[data-view="cases"] .app{padding-bottom:calc(30px + env(safe-area-inset-bott
   </section>
 
   <!-- КЕЙСЫ -->
-  <section class="view" id="v-cases">
+  <section class="view on" id="v-cases">
     <div class="chips" id="csTabs" style="margin-top:0"><button data-t="c" class="sel">Кейсы</button><button data-t="i">Инвентарь</button></div>
     <div id="csCases" class="cs-grid"></div>
     <div id="csInv" hidden></div>
@@ -299,7 +301,7 @@ body[data-view="cases"] .app{padding-bottom:calc(30px + env(safe-area-inset-bott
 
     <!-- ПРОФИЛЬ -->
   <section class="view" id="v-profile">
-    <button class="pback" id="pBack"><svg class="ic"><use href="#i-chev"/></svg>к играм</button>
+    <button class="pback" id="pBack"><svg class="ic"><use href="#i-chev"/></svg>к кейсам</button>
     <div class="pass">
       <div class="avatar" id="avBig"></div>
       <div><div class="pn" id="nmBig"></div><div class="un" id="unBig"></div></div>
@@ -317,8 +319,7 @@ body[data-view="cases"] .app{padding-bottom:calc(30px + env(safe-area-inset-bott
     <div class="sec">Последние операции</div>
     <div class="oplist" id="pOps"></div>
     <button class="more" id="wOps">вся история →</button>
-    <div class="sec">Игры</div>
-    <div id="pStats"></div>
+    <div id="pStats" hidden></div>
   </section>
 </div>
 
@@ -397,7 +398,7 @@ function confetti(box) {
 }
 
 /* ---------- баланс и отрисовка ---------- */
-let shown = S.balance, tw = null, bet = 100, busy = false, view = 'wheel', xVal = 2;
+let shown = S.balance, tw = null, bet = 100, busy = false, view = 'cases', xVal = 2;
 function setBal(v) { document.querySelectorAll('.balv').forEach(e => e.textContent = fmt(v)); }
 function renderBalance() {
   if (tw) cancelAnimationFrame(tw);
@@ -664,7 +665,7 @@ function openOps() {
 
 document.addEventListener('click', e => { if (e.target.closest('[data-open="dep"]')) openDeposit(); });
 $('avBtn').onclick = () => setView('profile');
-$('pBack').onclick = () => setView('wheel');
+$('pBack').onclick = () => setView('cases');
 $('wDep').onclick = openDeposit;
 $('wWd').onclick = openWithdraw;
 $('wOps').onclick = openOps;
@@ -916,7 +917,8 @@ async function csInv() {
   if (r.items.length) $('csAll').onclick = () => csSellIds(r.items.map(i => i.id));
 }
 
-if (REMOTE) { syncState(); }
+document.body.dataset.view = 'cases';
+if (REMOTE) { syncState(); casesEnter(); }
 setInterval(render, 60000);
 </script>
 </body>
