@@ -166,6 +166,23 @@ input[type=number]{-moz-appearance:textfield}
 .online{margin-left:8px;color:var(--win)}.online i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--win);margin-right:4px;vertical-align:1px}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
+
+.seg{grid-template-columns:repeat(3,1fr)}
+body[data-view="cases"] .app{padding-bottom:calc(30px + env(safe-area-inset-bottom))}
+.cs-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.cs-card{background:var(--s1);border:1px solid var(--line);border-radius:20px;padding:16px 12px 12px;text-align:center}
+.cs-card .big{font-size:38px;color:var(--gold);margin-bottom:6px}
+.cs-card b{display:block;font-family:var(--serif);font-size:22px}
+.cs-card small{color:var(--mute);font-size:12px}
+.cs-card .cta{padding:11px;font-size:14px;margin-top:10px}
+.cs-reel{position:relative;overflow:hidden;height:118px;border-radius:18px;background:var(--s1);border:1px solid var(--line);margin-bottom:8px}
+.cs-reel::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--gold);z-index:2}
+.cs-strip{display:flex;position:absolute;left:0;top:10px;will-change:transform}
+.cs-cell{flex:none;width:96px;height:96px;margin:0 4px;border-radius:14px;background:var(--s2);border:1px solid var(--line);border-bottom:3px solid var(--c,var(--mute));display:grid;place-content:center;gap:3px;text-align:center;font-size:12px;font-weight:600}
+.cs-cell span{color:var(--mute);font-weight:500}
+.cs-res{text-align:center;min-height:26px;font-size:16px;margin:10px 0}
+.cs-sell{display:flex;align-items:center;gap:10px}
+.cs-sell .pbtn{padding:8px 12px;font-size:13px}
 </style>
 </head>
 <body>
@@ -193,6 +210,7 @@ input[type=number]{-moz-appearance:textfield}
   <nav class="seg" id="nav">
       <button data-v="wheel" class="on"><svg class="ic"><use href="#i-wheel"/></svg>Колесо</button>
       <button data-v="upgrade"><svg class="ic"><use href="#i-upg"/></svg>Апгрейд</button>
+      <button data-v="cases"><svg class="ic"><use href="#i-gift"/></svg>Кейсы</button>
     </nav>
   <div class="testbar" id="testbar" hidden>Тестовый режим: пополнение и вывод проходят без реальных платежей, всё хранится на этом телефоне</div>
 
@@ -269,6 +287,14 @@ input[type=number]{-moz-appearance:textfield}
       </div>
       <button class="cta" id="goUpgrade"><svg class="ic"><use href="#i-upg"/></svg><span>Апгрейд</span></button>
     </div>
+  </section>
+
+  <!-- КЕЙСЫ -->
+  <section class="view" id="v-cases">
+    <div class="chips" id="csTabs" style="margin-top:0"><button data-t="c" class="sel">Кейсы</button><button data-t="i">Инвентарь</button></div>
+    <div id="csCases" class="cs-grid"></div>
+    <div id="csInv" hidden></div>
+    <div class="hint">Шансы и цены открыты: игроку возвращается около 88% от цены кейса. Звёзды игровые.</div>
   </section>
 
     <!-- ПРОФИЛЬ -->
@@ -433,6 +459,7 @@ function setView(v) {
   document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
   if (v === 'profile') renderProfile();
+  if (v === 'cases') casesEnter();
   window.scrollTo(0, 0); tick();
 }
 document.querySelectorAll('#nav button').forEach(b => b.onclick = () => setView(b.dataset.v));
@@ -441,7 +468,7 @@ document.querySelectorAll('#nav button').forEach(b => b.onclick = () => setView(
 const sheetBack = $('sheetBack'), sheet = $('sheet'), sheetBody = $('sheetBody');
 function openSheet(html) { sheetBody.innerHTML = html; sheetBack.classList.add('on'); sheet.classList.add('on'); sheet.scrollTop = 0; }
 function closeSheet() { sheetBack.classList.remove('on'); sheet.classList.remove('on'); }
-sheetBack.onclick = closeSheet;
+sheetBack.onclick = () => { if (!csBusy) closeSheet(); };
 
 /* общий экран ввода суммы */
 function amountSheet(o) {
@@ -822,6 +849,73 @@ function renderProfile() {
 $('nmBig').textContent = NAME; $('unBig').textContent = UNAME;
 $('testbar').hidden = REMOTE;
 setBet(100); setX(2); rebuildWheel(); renderStrip(); render();
+/* ================= КЕЙСЫ ================= */
+let CS = null, csBusy = false, csTab = 'c';
+const csCol = (c, v) => { const m = v / c.price; return m < .5 ? '#9b98a6' : m < 1.5 ? '#6aa7e8' : m < 4 ? '#57c99b' : '#e6c88f'; };
+const csPct = p => (p * 100).toFixed(p < .1 ? 1 : 0) + '%';
+async function casesEnter() {
+  if (!REMOTE) { $('csCases').innerHTML = '<div class="hint" style="grid-column:1/-1">Кейсы работают только при подключённом сервере.</div>'; return; }
+  if (!CS) { try { CS = (await apiCall('/cases')).cases; } catch (e) { return toast(e.message, true); } }
+  csShow();
+}
+function csShow() {
+  document.querySelectorAll('#csTabs button').forEach(b => b.classList.toggle('sel', b.dataset.t === csTab));
+  $('csCases').hidden = csTab !== 'c'; $('csInv').hidden = csTab !== 'i';
+  if (csTab === 'c') {
+    $('csCases').innerHTML = CS.map(c => `<div class="cs-card"><svg class="ic big"><use href="#i-gift"/></svg><b>${c.name}</b><small>до ${fmt(Math.max(...c.prizes.map(p => p.value)))} ⭐</small><button class="cta" data-c="${c.id}"><svg class="ic"><use href="#i-star"/></svg>${fmt(c.price)}</button></div>`).join('');
+    $('csCases').querySelectorAll('.cta').forEach(b => b.onclick = () => csOpen(b.dataset.c));
+  } else csInv();
+}
+document.querySelectorAll('#csTabs button').forEach(b => b.onclick = () => { csTab = b.dataset.t; tick(); csShow(); });
+function csOpen(id) {
+  const c = CS.find(x => x.id === id);
+  openSheet(`<div class="sh-title">${c.name}</div><div class="sh-text" style="margin-bottom:10px">Возврат около ${Math.round(c.rtp * 100)}% от цены кейса</div>` +
+    c.prizes.map(p => `<div class="op"><div class="t">${p.name}<small>шанс ${csPct(p.p)}</small></div><div class="r">⭐ ${fmt(p.value)}</div></div>`).join('') +
+    `<button class="cta" id="csGo" style="margin-top:16px"><span>Открыть за ${fmt(c.price)} ⭐</span></button>`);
+  $('csGo').onclick = () => csSpin(c);
+}
+const csPick = c => { let r = Math.random(), a = 0; for (const p of c.prizes) { a += p.p; if (r < a) return p; } return c.prizes[0]; };
+async function csSpin(c) {
+  if (csBusy) return;
+  if (S.balance < c.price) { haptic('error'); return toast('Не хватает звёзд, пополни баланс', true); }
+  csBusy = true; $('csGo').disabled = true;
+  let r;
+  try { r = await apiCall('/cases/open', { case: c.id }); }
+  catch (e) { csBusy = false; $('csGo').disabled = false; return toast(e.message, true); }
+  const W = 104, WIN = 38, cells = [];
+  for (let i = 0; i < 46; i++) cells.push(i === WIN ? c.prizes.find(p => p.name === r.item.name) : csPick(c));
+  openSheet(`<div class="sh-title">${c.name}</div><div class="cs-reel"><div class="cs-strip" id="csStrip">` +
+    cells.map(p => `<div class="cs-cell" style="--c:${csCol(c, p.value)}">${p.name}<span>⭐ ${fmt(p.value)}</span></div>`).join('') +
+    `</div></div><div class="cs-res" id="csRes">Открываем…</div><div id="csActs"></div>`);
+  const st = $('csStrip'), vw = st.parentElement.clientWidth, off = (Math.random() - .5) * 60;
+  const iv = setInterval(tick, 180);
+  requestAnimationFrame(() => requestAnimationFrame(() => { st.style.transition = 'transform 5s cubic-bezier(.12,.6,.1,1)'; st.style.transform = `translateX(${-(WIN * W + W / 2 - vw / 2 + off)}px)`; }));
+  st.addEventListener('transitionend', () => {
+    clearInterval(iv); csBusy = false; S.balance = r.balance; render(); popBalance(); haptic('success');
+    const it = r.item;
+    $('csRes').innerHTML = `Выпало: <b>${it.name}</b>, ⭐ ${fmt(it.value)}`;
+    $('csActs').innerHTML = `<button class="cta" id="csSell">Продать за ${fmt(it.value)} ⭐</button><button class="pbtn" id="csKeep" style="width:100%;margin-top:10px">Оставить в инвентаре</button><button class="pbtn" id="csAgain" style="width:100%;margin-top:10px">Открыть ещё</button>`;
+    $('csSell').onclick = () => csSellIds([it.id], true);
+    $('csKeep').onclick = closeSheet; $('csAgain').onclick = () => csOpen(c.id);
+  }, { once: true });
+}
+async function csSellIds(ids, close) {
+  try {
+    const r = await apiCall('/inventory/sell', { ids: ids });
+    S.balance = r.balance; render(); popBalance(); toast('Продано: +' + fmt(r.sold) + ' ⭐');
+    if (close) closeSheet(); if (csTab === 'i') csInv();
+  } catch (e) { toast(e.message, true); }
+}
+async function csInv() {
+  let r; try { r = await apiCall('/inventory'); } catch (e) { return toast(e.message, true); }
+  S.balance = r.balance; render(); const tot = r.items.reduce((a, i) => a + i.value, 0);
+  $('csInv').innerHTML = r.items.length
+    ? '<div style="margin-top:8px">' + r.items.map(i => `<div class="op"><div class="t">${i.name}<small>${(CS.find(c => c.id === i.case_id) || {}).name || ''}</small></div><div class="cs-sell"><div class="r">⭐ ${fmt(i.value)}</div><button class="pbtn" data-i="${i.id}">Продать</button></div></div>`).join('') + `</div><button class="cta" id="csAll" style="margin-top:14px">Продать всё за ${fmt(tot)} ⭐</button>`
+    : '<div class="hint">Инвентарь пуст. Открой первый кейс.</div>';
+  $('csInv').querySelectorAll('.pbtn').forEach(b => b.onclick = () => csSellIds([b.dataset.i]));
+  if (r.items.length) $('csAll').onclick = () => csSellIds(r.items.map(i => i.id));
+}
+
 if (REMOTE) { syncState(); }
 setInterval(render, 60000);
 </script>

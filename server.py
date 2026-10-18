@@ -389,3 +389,7 @@ async def start(): asyncio.create_task(dp.start_polling(bot))
 #   Оплата и вывод: https://docs.staticgram.top/guide/payments
 #   Mini Apps:      https://docs.staticgram.top/guide/miniapps
 # ---------------------------------------------------------------------------
+
+# ---- Кейсы (файл cases.py лежит рядом) ----
+import cases
+cases.setup(app, auth, db, tx, lock, PG, gate)
