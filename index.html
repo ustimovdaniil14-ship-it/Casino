@@ -38,7 +38,7 @@ svg.ic{width:1em;height:1em;flex:none}
 .plus{border:1px solid var(--line2);background:var(--s1);color:var(--gold);border-radius:14px;padding:11px 15px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px}
 .plus .ic{font-size:13px}
 
-.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;margin-bottom:14px;background:var(--s1);border:1px solid var(--line);border-radius:18px}
+.seg{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;padding:4px;margin-bottom:14px;background:var(--s1);border:1px solid var(--line);border-radius:18px}
 .seg button{display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 2px;border:1px solid transparent;border-radius:14px;background:transparent;color:var(--mute);font-weight:600;font-size:14px}
 .seg button .ic{font-size:16px}
 .seg button.on{color:var(--gold);background:rgba(230,200,143,.1);border-color:var(--line2)}
@@ -77,7 +77,7 @@ input[type=number]{-moz-appearance:textfield}
 .ring{position:absolute;inset:-4px;border-radius:50%;z-index:1;pointer-events:none;background:conic-gradient(from 30deg,#f6e4b8,#a67b3f,#f6e4b8,#a67b3f,#f6e4b8);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 13px),#000 calc(100% - 12px));mask:radial-gradient(farthest-side,transparent calc(100% - 13px),#000 calc(100% - 12px))}
 #leds{display:none}
 .wheelbox{position:absolute;inset:11px;border-radius:50%;overflow:hidden;background:#101117}
-.wheelbox canvas{width:100%;height:100%;display:block;transition:transform 5.2s cubic-bezier(.1,.62,.08,1);will-change:transform}
+.wheelbox canvas{width:100%;height:100%;display:block;transition:transform 2.7s cubic-bezier(.1,.62,.08,1);will-change:transform}
 .pin{position:absolute;top:-14px;left:50%;width:34px;height:44px;margin-left:-17px;z-index:5;transform-origin:50% 14px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
 .pin svg{width:100%;height:100%}
 .spinning .pin{animation:pinTick .16s infinite alternate}
@@ -91,30 +91,14 @@ input[type=number]{-moz-appearance:textfield}
 .upct.hi{color:var(--win)}.upct.mid{color:var(--gold)}.upct.lo{color:var(--lose)}
 .uptier{font-size:14px;font-weight:500;color:var(--mute);margin-top:4px}
 .upmul{margin-top:6px;font-weight:700;font-size:14px;color:var(--mute)}.upmul b{color:var(--text)}
-.needle{position:absolute;inset:0;transform-origin:50% 50%;transition:transform 4.4s cubic-bezier(.1,.62,.08,1);will-change:transform;pointer-events:none}
+.needle{position:absolute;inset:0;pointer-events:none;z-index:2}
+.ugauge svg.ring2{transform-origin:50% 50%;transition:transform 2.5s cubic-bezier(.1,.62,.08,1);will-change:transform}
 .needle::before{content:"";position:absolute;top:-5px;left:50%;margin-left:-9px;border-left:9px solid transparent;border-right:9px solid transparent;border-top:22px solid var(--text);filter:drop-shadow(0 3px 3px rgba(0,0,0,.5))}
 .slide{width:100%;margin:12px 0 2px;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:var(--s2);outline:none}
 .slide::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:linear-gradient(180deg,#f2dcaa,#c9a064);border:3px solid var(--bg)}
 .slide::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--gold);border:3px solid var(--bg)}
 .up-chips button{min-width:48px;padding:10px 8px}
 
-.scene{perspective:700px;height:190px;display:flex;align-items:center;justify-content:center;position:relative}
-.toss{position:relative;width:var(--size);height:var(--size);transform-style:preserve-3d}
-.toss.go{animation:toss 1.7s cubic-bezier(.3,.1,.3,1)}
-@keyframes toss{0%{transform:translateY(0) scale(1)}38%{transform:translateY(-62px) scale(1.18)}62%{transform:translateY(0) scale(1)}74%{transform:translateY(-16px) scale(1.04)}88%{transform:translateY(0)}94%{transform:translateY(-4px)}100%{transform:translateY(0)}}
-.tilt{width:100%;height:100%;transform-style:preserve-3d;transform:rotateX(-20deg) rotateY(-24deg)}
-.cube{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 1.7s cubic-bezier(.15,.7,.2,1)}
-.face{position:absolute;width:var(--size);height:var(--size);border-radius:16px;padding:15px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);background:linear-gradient(145deg,#faf6ec,#e4dccb);box-shadow:inset 0 0 0 1px rgba(0,0,0,.06),inset 0 -10px 16px rgba(120,100,60,.14);backface-visibility:visible}
-.core{position:absolute;width:var(--size);height:var(--size);background:#cfc7b3;backface-visibility:visible}
-.c2{transform:rotateY(90deg)}.c3{transform:rotateX(90deg)}
-.f1{transform:rotateY(0deg) translateZ(calc(var(--size)/2))}.f6{transform:rotateY(180deg) translateZ(calc(var(--size)/2))}
-.f3{transform:rotateY(90deg) translateZ(calc(var(--size)/2))}.f4{transform:rotateY(-90deg) translateZ(calc(var(--size)/2))}
-.f2{transform:rotateX(90deg) translateZ(calc(var(--size)/2))}.f5{transform:rotateX(-90deg) translateZ(calc(var(--size)/2))}
-.pip{width:76%;height:76%;margin:auto;border-radius:50%;visibility:hidden;background:#1a1b24;box-shadow:inset 0 2px 3px rgba(0,0,0,.5)}
-.pip.on{visibility:visible}.f1 .pip.on{background:var(--wine)}
-.shadow{position:absolute;bottom:8px;left:50%;width:100px;height:14px;margin-left:-50px;border-radius:50%;background:rgba(0,0,0,.6);filter:blur(5px)}
-.shadow.go{animation:shadow 1.7s cubic-bezier(.3,.1,.3,1)}
-@keyframes shadow{0%{transform:scale(1);opacity:1}38%{transform:scale(.6);opacity:.45}62%{transform:scale(1);opacity:1}74%{transform:scale(.85);opacity:.75}88%,100%{transform:scale(1);opacity:1}}
 .picks{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .pick{background:var(--s1);border:1px solid var(--line);border-radius:18px;padding:15px 8px;text-align:center;font-family:var(--serif);font-size:26px;font-weight:700;line-height:1.1}
 .pick small{display:block;color:var(--mute);font-family:var(--ui);font-weight:500;font-size:13px;margin-top:3px}
@@ -146,7 +130,7 @@ input[type=number]{-moz-appearance:textfield}
 .more{width:100%;border:0;background:transparent;color:var(--gold);font-weight:600;font-size:14px;padding:8px 0 0;text-align:left}
 .empty{color:var(--mute);text-align:center;padding:26px;font-size:14px}
 .gi{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:19px;background:var(--s1);border:1px solid var(--line);flex:none}
-.gi.dep{color:var(--win)}.gi.wd{color:var(--gold)}
+.gi.promo{color:var(--gold)}.gi.dep{color:var(--win)}.gi.wd{color:var(--gold)}
 .oplist{max-height:60vh;overflow-y:auto}
 .op{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--line)}
 .op .t{flex:1;font-weight:600;font-size:14.5px}.op .t small{display:block;color:var(--mute);font-weight:500;font-size:12px;margin-top:2px}
@@ -178,7 +162,7 @@ input[type=number]{-moz-appearance:textfield}
 @keyframes fly{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--rot))}}
 .toast{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-140%);z-index:80;padding:11px 18px;border-radius:14px;font-size:14px;font-weight:600;background:#1d1e27;border:1px solid var(--line2);box-shadow:0 12px 30px rgba(0,0,0,.5);transition:transform .32s cubic-bezier(.2,.9,.3,1.2);max-width:90%;text-align:center}
 .toast.show{transform:translate(-50%,0)}.toast.err{border-color:rgba(229,112,122,.55);color:#f3b4ba}
-.seg{grid-template-columns:repeat(3,1fr)}.seg button{gap:5px;font-size:13px;padding:11px 0}.seg button .ic{font-size:15px}
+.seg{grid-template-columns:repeat(2,1fr)}.seg button{gap:5px;font-size:13px;padding:11px 0}.seg button .ic{font-size:15px}
 .online{margin-left:8px;color:var(--win)}.online i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--win);margin-right:4px;vertical-align:1px}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
@@ -194,6 +178,7 @@ input[type=number]{-moz-appearance:textfield}
   <symbol id="i-dice" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/></g><g fill="currentColor"><circle cx="8.6" cy="8.6" r="1.4"/><circle cx="15.4" cy="8.6" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="8.6" cy="15.4" r="1.4"/><circle cx="15.4" cy="15.4" r="1.4"/></g></symbol>
   <symbol id="i-user" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></g></symbol>
   <symbol id="i-upg" viewBox="0 0 24 24"><path d="M5 13l7-6 7 6M5 19l7-6 7 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="9" width="17" height="11" rx="2"/><path d="M12 9v11M3.5 13.5h17M12 9C11 5.5 7 5 7 7.4 7 9 12 9 12 9zM12 9c1-3.5 5-4 5-1.6C17 9 12 9 12 9z"/></g></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
   <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -208,7 +193,6 @@ input[type=number]{-moz-appearance:textfield}
   <nav class="seg" id="nav">
       <button data-v="wheel" class="on"><svg class="ic"><use href="#i-wheel"/></svg>Колесо</button>
       <button data-v="upgrade"><svg class="ic"><use href="#i-upg"/></svg>Апгрейд</button>
-      <button data-v="dice"><svg class="ic"><use href="#i-dice"/></svg>Кубик</button>
     </nav>
   <div class="testbar" id="testbar" hidden>Тестовый режим: пополнение и вывод проходят без реальных платежей, всё хранится на этом телефоне</div>
 
@@ -243,40 +227,13 @@ input[type=number]{-moz-appearance:textfield}
     </div>
   </section>
 
-  <!-- КУБИК -->
-  <section class="view" id="v-dice">
-    <div class="stage" id="stDice">
-      <div class="scene">
-        <div class="shadow" id="shadow"></div>
-        <div class="toss" id="toss"><div class="tilt"><div class="cube" id="cube">
-          <div class="core c1"></div><div class="core c2"></div><div class="core c3"></div>
-          <div class="face f1"></div><div class="face f2"></div><div class="face f3"></div>
-          <div class="face f4"></div><div class="face f5"></div><div class="face f6"></div>
-        </div></div></div>
-      </div>
-      <div class="result" id="rDice">Сделай ставку и брось кубик</div>
-    </div>
-    <div class="picks lockable" id="picks">
-      <button class="pick even" data-p="even">Чёт<small>2 · 4 · 6</small></button>
-      <button class="pick odd" data-p="odd">Нечёт<small>1 · 3 · 5</small></button>
-    </div>
-    <div class="hint">Выигрыш: ставка × 1.9</div>
-    <div class="dock">
-      
-      <div class="dock-bet">
-        <label class="betbox"><svg class="ic"><use href="#i-star"/></svg><input class="bet-input" type="number" inputmode="numeric" min="1"></label>
-        <div class="quick bet-chips"><button data-v="100"><svg class="ic"><use href="#i-star"/></svg>100</button><button data-v="500"><svg class="ic"><use href="#i-star"/></svg>500</button><button data-act="max">MAX</button></div>
-      </div>
-      <button class="cta" id="goDice"><svg class="ic"><use href="#i-dice"/></svg><span>Бросить кубик</span></button>
-    </div>
-  </section>
-
   <!-- АПГРЕЙДЕР -->
   <section class="view" id="v-upgrade">
     <div class="stage" id="stUp">
       <div class="ugauge">
         <svg class="ring2" viewBox="0 0 280 280">
           <circle cx="140" cy="140" r="136" fill="none" stroke="rgba(230,200,143,.28)" stroke-width="1"/>
+          <circle cx="140" cy="140" r="132" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="5" stroke-dasharray="2 8.25"/>
           <circle cx="140" cy="140" r="100" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
           <circle cx="140" cy="140" r="118" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="22"/>
           <circle id="upArc" cx="140" cy="140" r="118" fill="none" stroke="#57c99b" stroke-width="22" stroke-dasharray="0 742" transform="rotate(-90 140 140)"/>
@@ -292,18 +249,18 @@ input[type=number]{-moz-appearance:textfield}
     </div>
     <div class="lockable">
       <div class="mulcard">
-        <div><div class="cap">Множитель</div><div class="field"><span class="x">x</span><input id="upMul" type="number" inputmode="decimal" min="1.8" max="100" step="0.1"></div></div>
+        <div><div class="cap">Множитель</div><div class="field"><span class="x">x</span><input id="upMul" type="number" inputmode="decimal" min="2.12" max="100" step="0.1"></div></div>
         <div class="mulside"><div class="info"><span>Выигрыш</span><b>⭐ <span id="upPrize">0</span></b></div></div>
       </div>
       <div class="card" style="margin-top:10px">
         <div class="cap">Шанс на успех</div>
-        <input class="slide" id="upSlide" type="range" min="1" max="50" step="0.5" value="45">
-        <div class="info"><span>1%</span><span>50%</span></div>
+        <input class="slide" id="upSlide" type="range" min="1" max="42.5" step="0.5" value="40">
+        <div class="info"><span>1%</span><span>42.5%</span></div>
       </div>
-      <div class="chips up-chips" id="upMulChips"><button data-x="2">x2</button><button data-x="5">x5</button><button data-x="10">x10</button><button data-x="50">x50</button><button data-x="100">x100</button></div>
-      <div class="chips up-chips" id="upChChips"><button data-c="25">25%</button><button data-c="50">50%</button></div>
+      <div class="chips up-chips" id="upMulChips"><button data-x="2.5">x2.5</button><button data-x="5">x5</button><button data-x="10">x10</button><button data-x="50">x50</button><button data-x="100">x100</button></div>
+      <div class="chips up-chips" id="upChChips"><button data-c="25">25%</button><button data-c="40">40%</button></div>
     </div>
-    <div class="hint">Стрелка должна остановиться в зелёной зоне.</div>
+    <div class="hint">Круг крутится, стрелка стоит на месте. Она должна остановиться в зелёной зоне.</div>
     <div class="dock">
       
       <div class="dock-bet">
@@ -326,6 +283,7 @@ input[type=number]{-moz-appearance:textfield}
       <button class="pbtn main" id="wDep"><svg class="ic"><use href="#i-down"/></svg>Пополнить</button>
       <button class="pbtn" id="wWd"><svg class="ic"><use href="#i-up"/></svg>Вывести</button>
     </div>
+    <button class="pbtn" id="wPromo" style="width:100%;margin-bottom:6px"><svg class="ic"><use href="#i-gift"/></svg>Промокод</button>
     <div class="sec">Звёзды</div>
     <div class="lg"><span>Внесено</span><i></i><b>⭐ <span id="sDep">0</span></b></div>
     <div class="lg"><span>Выведено</span><i></i><b>⭐ <span id="sWd">0</span></b></div>
@@ -428,7 +386,6 @@ function render() {
   renderBalance();
   if (!busy) {
     $('goWheel').querySelector('span').textContent = S.balance <= 0 ? 'Пополнить баланс' : 'Крутить';
-    $('goDice').querySelector('span').textContent = S.balance <= 0 ? 'Пополнить баланс' : 'Бросить кубик';
     $('goUpgrade').querySelector('span').textContent = S.balance <= 0 ? 'Пополнить баланс' : 'Апгрейд';
   }
   if (view === 'profile') renderProfile();
@@ -437,7 +394,7 @@ function setBusy(b) { busy = b; document.body.classList.toggle('busy', b); }
 
 function takeBet() {
   if (!bet || bet < 1) { toast('Введи ставку', true); return false; }
-  if (bet > MAX_BET) { toast('Максимальная ставка 5 000 ⭐', true); return false; }
+  if (bet > MAX_BET) { toast('Максимальная ставка ' + fmt(MAX_BET) + ' ⭐', true); return false; }
   if (bet > S.balance) { toast('Не хватает звёзд на такую ставку', true); haptic('error'); return false; }
   S.balance -= bet; save(); render(); return true;
 }
@@ -626,13 +583,48 @@ async function startWithdraw(a) {
   openReceipt(op, 'Вывод оформлен');
 }
 
+/* ---- промокод ---- */
+const DEMO_PROMOS = { DEMO500: 500, START: 100 };   // только для демо-версии; на сервере коды создаёт владелец командой бота
+function openPromo() {
+  openSheet(
+    `<div class="sh-icon"><svg class="ic"><use href="#i-gift"/></svg></div><div class="sh-title">Промокод</div>` +
+    `<div class="sh-text">Введи промокод, чтобы получить бонусные звёзды.</div>` +
+    `<div class="amt"><input id="pIn" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="КОД" style="text-transform:uppercase;letter-spacing:.06em;font-size:28px"></div>` +
+    `<button class="cta" id="pGo" disabled><span>Активировать</span></button>` +
+    (REMOTE ? '' : `<div class="sh-note">Демо: попробуй DEMO500</div>`));
+  const inp = $('pIn'), go = $('pGo');
+  inp.oninput = () => { go.disabled = inp.value.trim().length < 3; };
+  inp.onkeydown = e => { if (e.key === 'Enter' && !go.disabled) go.click(); };
+  go.onclick = () => activatePromo(inp.value);
+  setTimeout(() => { try { inp.focus(); } catch (e) {} }, 380);
+}
+async function activatePromo(raw) {
+  const code = String(raw || '').trim().toUpperCase();
+  if (code.length < 3) return toast('Введи промокод', true);
+  const go = $('pGo'); if (go) go.disabled = true;
+  try {
+    let amount;
+    if (REMOTE) { const r = await apiCall('/promo', { code: code }); amount = r.amount; await syncState(); }
+    else {
+      const a = DEMO_PROMOS[code]; if (!a) throw new Error('Промокод не найден');
+      S.promos = S.promos || []; if (S.promos.includes(code)) throw new Error('Ты уже активировал этот промокод');
+      S.promos.push(code); S.balance += a; amount = a; pushOp({ k: 'promo', a: a, g: code, id: rid() }); save(); render();
+    }
+    popBalance(); haptic('success');
+    openSheet(`<div class="sh-icon ok"><svg class="ic"><use href="#i-check"/></svg></div><div class="sh-title">Промокод активирован</div>` +
+      `<div class="sh-text">Начислено <b>+${fmt(amount)} ⭐</b></div><button class="cta" id="pOk">Играть</button>`);
+    $('pOk').onclick = closeSheet;
+  } catch (e) { toast(e.message, true); if (go) go.disabled = false; }
+}
+
 /* ---- история операций ---- */
 function opRow(o) {
     let icon, cls, title, sub = fdate(o.ts), amt, ac;
-    if (o.k === 'dep') { icon = 'i-down'; cls = 'dep'; title = 'Пополнение'; amt = '+' + fmt(o.a); ac = 'w'; }
+    if (o.k === 'promo') { icon = 'i-gift'; cls = 'promo'; title = 'Промокод ' + (o.g || ''); amt = '+' + fmt(o.a); ac = 'w'; }
+    else if (o.k === 'dep') { icon = 'i-down'; cls = 'dep'; title = 'Пополнение'; amt = '+' + fmt(o.a); ac = 'w'; }
     else if (o.k === 'wd') { icon = 'i-up'; cls = 'wd'; title = 'Вывод'; amt = '−' + fmt(o.a); ac = 'n'; }
     else {
-      const d = o.p - o.b; icon = ICON[o.g] || 'i-star'; cls = ''; title = o.g === 'wheel' ? 'Колесо x' + fx(o.x) : o.g === 'upgrade' ? 'Апгрейд x' + fx(o.x) : 'Кубик';
+      const d = o.p - o.b; icon = ICON[o.g] || 'i-star'; cls = ''; title = o.g === 'wheel' ? 'Колесо x' + fx(o.x) : o.g === 'upgrade' ? 'Апгрейд x' + fx(o.x) : o.g === 'roll' ? 'Рулетка ' + Math.round(90 / o.x) + '%' : 'Кубик';
       amt = d > 0 ? '+' + fmt(d) : d === 0 ? '0' : '−' + fmt(-d); ac = d > 0 ? 'w' : d === 0 ? 'n' : 'l'; sub = 'ставка ' + fmt(o.b) + ' · ' + sub;
     }
     return `<div class="op"><div class="gi ${cls}"><svg class="ic"><use href="#${icon}"/></svg></div><div class="t">${title}<small>${sub}</small></div><div class="r ${ac}">${amt} ⭐</div></div>`;
@@ -649,6 +641,7 @@ $('pBack').onclick = () => setView('wheel');
 $('wDep').onclick = openDeposit;
 $('wWd').onclick = openWithdraw;
 $('wOps').onclick = openOps;
+$('wPromo').onclick = openPromo;
 
 /* ================= КОЛЕСО ================= */
 /*LAYOUT*/
@@ -737,7 +730,7 @@ $('goWheel').onclick = async () => {
   } else win = rndFloat() < RTP / x;
   const list = win ? WH.win : WH.lose, n = list[rndInt(list.length)], step = 360 / WH.N;
   const target = -(n + .5) * step + (Math.random() - .5) * step * .7;
-  wheelRot = Math.ceil((wheelRot + 360 * 6 - target) / 360) * 360 + target;
+  wheelRot = Math.ceil((wheelRot + 360 * 4 - target) / 360) * 360 + target;
   say($('rWheel'), 'Крутим…'); $('stWheel').classList.add('spinning');
   wheelEl.style.transform = `rotate(${wheelRot}deg)`;
   const iv = setInterval(tick, 170);
@@ -750,56 +743,15 @@ $('goWheel').onclick = async () => {
     } else { settle('wheel', b, 0, x, srvBal); say(r, `Не повезло · −${fmt(b)} ⭐`, 'lose'); haptic('error'); }
     S.wh.unshift({ w: win, x: x }); S.wh = S.wh.slice(0, 12); save(); renderStrip();
     setBusy(false); $('goWheel').disabled = false; render();
-  }, 5300);
+  }, 2850);
 };
-
-/* ================= КУБИК ================= */
-const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
-const TARGET = { 1: { x: 0, y: 0 }, 6: { x: 0, y: 180 }, 3: { x: 0, y: -90 }, 4: { x: 0, y: 90 }, 2: { x: -90, y: 0 }, 5: { x: 90, y: 0 } };
-const cube = $('cube'), toss = $('toss'), shadow = $('shadow');
-let curX = 0, curY = 0, pick = null;
-document.querySelectorAll('.face').forEach(f => {
-  const n = +f.className.match(/f(\d)/)[1];
-  for (let i = 0; i < 9; i++) { const p = document.createElement('div'); p.className = 'pip' + (PIPS[n].includes(i) ? ' on' : ''); f.appendChild(p); }
-});
-function setCube(x, y, anim) { cube.style.transition = anim ? '' : 'none'; cube.style.transform = `rotateX(${x}deg) rotateY(${y}deg)`; }
-document.querySelectorAll('#picks .pick').forEach(b => b.onclick = () => {
-  pick = b.dataset.p; document.querySelectorAll('#picks .pick').forEach(x => x.classList.toggle('sel', x === b)); tick();
-});
-$('goDice').onclick = async () => {
-  if (busy) return;
-  const r = $('rDice');
-  if (S.balance <= 0) return openDeposit();
-  if (!pick) return toast('Выбери чёт или нечёт', true);
-  if (!takeBet()) return;
-  setBusy(true); $('goDice').disabled = true; $('goDice').querySelector('span').textContent = 'Бросаем…'; say(r, 'Кубик летит…');
-  const b = bet; let n, srvBal = null;
-  if (REMOTE) {
-    try { const j = await apiCall('/dice', { bet: b, pick: pick }); n = j.n; srvBal = j.balance; }
-    catch (e) { S.balance += b; setBusy(false); $('goDice').disabled = false; render(); toast(e.message, true); return; }
-  } else n = rndInt(6) + 1;
-  const t = TARGET[n];
-  const nx = Math.ceil((curX + 360 * (2 + rndInt(2)) - t.x) / 360) * 360 + t.x;
-  const ny = Math.ceil((curY + 360 * (2 + rndInt(2)) - t.y) / 360) * 360 + t.y;
-  curX = nx; curY = ny;
-  toss.classList.remove('go'); shadow.classList.remove('go'); void toss.offsetWidth;
-  toss.classList.add('go'); shadow.classList.add('go'); setCube(nx, ny, true);
-  const iv = setInterval(tick, 380);
-  setTimeout(() => {
-    clearInterval(iv); toss.classList.remove('go'); shadow.classList.remove('go');
-    const won = (pick === 'even') === (n % 2 === 0);
-    if (won) { const prize = Math.floor(b * 1.9); settle('dice', b, prize, 1.9, srvBal); say(r, `Выпало ${n} · выигрыш +${fmt(prize - b)} ⭐`, 'win'); haptic('success'); confetti($('stDice')); popBalance(); }
-    else { settle('dice', b, 0, 1.9, srvBal); say(r, `Выпало ${n} · проигрыш −${fmt(b)} ⭐`, 'lose'); haptic('error'); }
-    setBusy(false); $('goDice').disabled = false; render();
-  }, 1780);
-};
-setCube(0, 0, false);
 
 /* ================= АПГРЕЙДЕР ================= */
 const UP_R = 118, UP_C = 2 * Math.PI * UP_R;
-let upX = 2, upRot = 0;
-const upArc = $('upArc'), upNeedle = $('upNeedle');
-function setUpX(v, src) { upX = Math.min(100, Math.max(1.8, Math.round(v * 100) / 100)); updateUpgrade(src); }
+const UP_MIN = 2.12;   // минимальный множитель = максимальный шанс 42.5%
+let upX = 2.5, upRot = 0;
+const upArc = $('upArc'), upRing = document.querySelector('.ugauge svg.ring2');
+function setUpX(v, src) { upX = Math.min(100, Math.max(UP_MIN, Math.round(v * 100) / 100)); updateUpgrade(src); }
 function updateUpgrade(src) {
   const c = RTP / upX, pct = c * 100;
   upArc.setAttribute('stroke-dasharray', (c * UP_C).toFixed(2) + ' ' + UP_C.toFixed(2));
@@ -810,7 +762,7 @@ function updateUpgrade(src) {
   $('upInfo').innerHTML = 'x' + fx(upX);
   $('upPrize').textContent = fmt(Math.floor(bet * upX));
   if (src !== 'input') $('upMul').value = upX;
-  if (src !== 'slide') $('upSlide').value = Math.min(50, Math.max(1, pct));
+  if (src !== 'slide') $('upSlide').value = Math.min(42.5, Math.max(1, pct));
   document.querySelectorAll('#upMulChips button').forEach(b => b.classList.toggle('sel', +b.dataset.x === upX));
   document.querySelectorAll('#upChChips button').forEach(b => b.classList.toggle('sel', Math.abs(+b.dataset.c - pct) < .05));
 }
@@ -819,8 +771,8 @@ document.addEventListener('click', e => {
   if (b.dataset.x) setUpX(+b.dataset.x); else setUpX(RTP / (+b.dataset.c / 100));
   tick();
 });
-$('upMul').addEventListener('input', e => { const v = parseFloat(e.target.value); if (v >= 1.8) setUpX(v, 'input'); });
-$('upMul').addEventListener('change', e => setUpX(parseFloat(e.target.value) || 2));
+$('upMul').addEventListener('input', e => { const v = parseFloat(e.target.value); if (v >= UP_MIN) setUpX(v, 'input'); });
+$('upMul').addEventListener('change', e => setUpX(parseFloat(e.target.value) || 2.5));
 $('upSlide').addEventListener('input', e => { const c = parseFloat(e.target.value) / 100; if (c > 0) setUpX(RTP / c, 'slide'); });
 
 $('goUpgrade').onclick = async () => {
@@ -837,10 +789,11 @@ $('goUpgrade').onclick = async () => {
   const c = RTP / x, edge = Math.min(.012, c * .12) * 360;
   const ang = win ? edge + rndFloat() * Math.max(.1, c * 360 - 2 * edge)
                   : c * 360 + edge + rndFloat() * Math.max(.1, (1 - c) * 360 - 2 * edge);
-  upRot = Math.ceil((upRot + 360 * 5 - ang) / 360) * 360 + ang;
+  /* стрелка стоит вверху, крутится круг: точка круга с углом ang должна оказаться под стрелкой */
+  upRot = Math.ceil((upRot + 360 * 3) / 360) * 360 - ang;
   say($('rUp'), 'Крутим…'); $('stUp').classList.add('spinning');
-  upNeedle.style.transform = `rotate(${upRot}deg)`;
-  const iv = setInterval(tick, 160);
+  upRing.style.transform = `rotate(${upRot}deg)`;
+  const iv = setInterval(tick, 140);
   setTimeout(() => {
     clearInterval(iv); $('stUp').classList.remove('spinning');
     const r = $('rUp');
@@ -849,7 +802,7 @@ $('goUpgrade').onclick = async () => {
       say(r, `Апгрейд x${fx(x)} · выигрыш +${fmt(prize - b)} ⭐`, 'win'); haptic('success'); confetti($('stUp')); popBalance();
     } else { settle('upgrade', b, 0, x, srvBal); say(r, `Не вышло · −${fmt(b)} ⭐`, 'lose'); haptic('error'); }
     setBusy(false); btn.disabled = false; render();
-  }, 4700);
+  }, 2650);
 };
 
 function setOnline(n) { if (n) { $('onN').textContent = n; $('onl').hidden = false; } }
