@@ -13,6 +13,8 @@ from aiogram.fsm.state import State, StatesGroup
 
 TOKEN = os.environ["BOT_TOKEN"]
 RTP, DEP_MAX, WD_LIMIT = 0.9, 100_000, 50_000
+WIN_CAP = 50_000   # максимальный выигрыш за один раунд
+def cap_err(): return HTTPException(400, f"Максимальный выигрыш за раунд {WIN_CAP:,} ⭐. Уменьши ставку или множитель".replace(",", " "))
 # Если бот создан не в обычном Telegram, а на своём сервере приватки,
 # задай переменную API_BASE (адрес Bot API приватки, например https://api.example.com)
 from aiogram.client.session.aiohttp import AiohttpSession
@@ -65,6 +67,14 @@ for stmt in (
 ):
     db.execute(stmt)
 
+# Мины удалены: возвращаем ставки незаконченных игр и убираем таблицу
+try:
+    for r in db.execute("SELECT uid, bet FROM mines").fetchall():
+        db.execute("UPDATE users SET balance=balance+? WHERE id=?", (r["bet"], r["uid"]))
+    db.execute("DROP TABLE mines")
+except Exception:
+    pass
+
 @contextlib.contextmanager
 def tx():
     db.execute("BEGIN")
@@ -77,6 +87,12 @@ def tx():
 
 lock = asyncio.Lock()
 
+seen = {}   # когда игрок последний раз обращался к серверу (для счётчика онлайна)
+def online():
+    now = time.time()
+    for k in [k for k, v in seen.items() if now - v > 300]: del seen[k]
+    return sum(1 for v in seen.values() if now - v <= 45)
+
 def auth(request: Request) -> int:
     raw = request.headers.get("X-Init-Data", "")
     d = dict(parse_qsl(raw, keep_blank_values=True)); h = d.pop("hash", "")
@@ -86,6 +102,7 @@ def auth(request: Request) -> int:
         raise HTTPException(401, "bad initData")
     if time.time() - int(d.get("auth_date", 0)) > 86400: raise HTTPException(401, "expired")
     uid = json.loads(d["user"])["id"]
+    seen[uid] = time.time()
     db.execute("INSERT INTO users(id) VALUES(?) ON CONFLICT DO NOTHING", (uid,))
     return uid
 
@@ -116,7 +133,9 @@ async def health(): return {"ok": True}
 async def index(): return FileResponse("index.html")  # мини-апп отдаётся с этого же сервера
 
 @app.get("/api/state")
-async def get_state(request: Request): return {"state": state(auth(request))}
+async def get_state(request: Request):
+    uid = auth(request)
+    return {"state": state(uid), "online": online()}
 
 @app.post("/api/deposit")
 async def deposit(request: Request):
@@ -195,6 +214,7 @@ def play(uid, bet, payout, x, game):
 async def wheel(request: Request):
     uid = auth(request); j = await request.json(); bet = int(j["bet"]); x = round(float(j["x"]), 2)
     if not 2 <= x <= 100: raise HTTPException(400, "Неверный множитель")
+    if bet * x > WIN_CAP: raise cap_err()
     async with lock:
         if bet < 1 or bet > state(uid)["balance"]: raise HTTPException(400, "Не хватает звёзд")
         win = secrets.SystemRandom().random() < RTP / x
@@ -204,7 +224,8 @@ async def wheel(request: Request):
 @app.post("/api/upgrade")
 async def upgrade(request: Request):
     uid = auth(request); j = await request.json(); bet = int(j["bet"]); x = round(float(j["x"]), 2)
-    if not 1.1 <= x <= 100: raise HTTPException(400, "Неверный множитель")
+    if not 1.2 <= x <= 100: raise HTTPException(400, "Неверный множитель")
+    if bet * x > WIN_CAP: raise cap_err()
     async with lock:
         if bet < 1 or bet > state(uid)["balance"]: raise HTTPException(400, "Не хватает звёзд")
         win = secrets.SystemRandom().random() < RTP / x
