@@ -39,7 +39,8 @@ if PG:
     import psycopg
     from psycopg.rows import dict_row
     def _connect():
-        return psycopg.connect(DATABASE_URL, autocommit=True, row_factory=dict_row, connect_timeout=10)
+        return psycopg.connect(DATABASE_URL, autocommit=True, row_factory=dict_row, connect_timeout=10,
+                              prepare_threshold=None)   # без кэша планов: иначе после обновления таблиц бывает «cached plan must not change result type»
 else:
     import sqlite3
     def _connect():
@@ -155,10 +156,10 @@ async def _any(_, e):
 @app.exception_handler(HTTPException)
 async def _h(_, e): return JSONResponse({"error": e.detail}, e.status_code)
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health(): return {"ok": True}
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def index(): return FileResponse("index.html")  # мини-апп отдаётся с этого же сервера
 
 @app.get("/api/state")
