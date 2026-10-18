@@ -194,11 +194,21 @@ def play(uid, bet, payout, x, game):
 @app.post("/api/wheel")
 async def wheel(request: Request):
     uid = auth(request); j = await request.json(); bet = int(j["bet"]); x = round(float(j["x"]), 2)
-    if not 1.1 <= x <= 100: raise HTTPException(400, "Неверный множитель")
+    if not 2 <= x <= 100: raise HTTPException(400, "Неверный множитель")
     async with lock:
         if bet < 1 or bet > state(uid)["balance"]: raise HTTPException(400, "Не хватает звёзд")
         win = secrets.SystemRandom().random() < RTP / x
         bal = play(uid, bet, int(bet * x) if win else 0, x, "wheel")
+    return {"win": win, "balance": bal}
+
+@app.post("/api/upgrade")
+async def upgrade(request: Request):
+    uid = auth(request); j = await request.json(); bet = int(j["bet"]); x = round(float(j["x"]), 2)
+    if not 1.1 <= x <= 100: raise HTTPException(400, "Неверный множитель")
+    async with lock:
+        if bet < 1 or bet > state(uid)["balance"]: raise HTTPException(400, "Не хватает звёзд")
+        win = secrets.SystemRandom().random() < RTP / x
+        bal = play(uid, bet, int(bet * x) if win else 0, x, "upgrade")
     return {"win": win, "balance": bal}
 
 @app.post("/api/dice")

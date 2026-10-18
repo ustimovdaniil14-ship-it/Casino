@@ -5,125 +5,119 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Игры</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Neucha&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Manrope:wght@500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="https://staticgram.top/js/telegram-web-app.js"></script>
 <style>
-  /* Меловая доска: плоские цвета, неровные линии, жёсткие тени без свечения */
+  /* Зелёное сукно, латунь и немного живого почерка: аккуратный интерфейс без неона */
   :root {
-    --bg: #1f2f29; --bg2: #162320; --surface: #2a3d35; --surface2: #34493f;
-    --line: rgba(239,233,216,.5);
-    --text: #efe9d8; --muted: #a8b3a6; --ink: #121a17;
-    --gold: #e3b341; --red: #c8473d; --teal: #7fb6a2; --coral: #d98a6a;
-    --win: #9bd6a6; --lose: #e8806f;
-    --hand: "Neucha", "Marck Script", "Segoe Print", "Comic Sans MS", cursive;
-    --wob: 14px 19px 12px 20px / 19px 12px 20px 14px;
-    --wob2: 20px 12px 19px 14px / 12px 20px 14px 19px;
+    --bg: #0f1c18; --bg2: #0a1411; --surface: #172a24; --surface2: #1f372f;
+    --line: rgba(255,255,255,.08); --line2: rgba(217,178,91,.38);
+    --text: #f1eee4; --muted: #8fa89d;
+    --brass: #d9b25b; --brass2: #b8913f; --brassInk: #10211c;
+    --red: #c9473f; --win: #5fcf9a; --lose: #e07a6c;
+    --ui: "Manrope", -apple-system, "Segoe UI", Roboto, sans-serif;
+    --serif: "Playfair Display", Georgia, "Times New Roman", serif;
+    --hand: "Caveat", "Segoe Print", "Comic Sans MS", cursive;
     --size: 120px;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; }
   body {
-    color: var(--text); font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
-    min-height: 100vh; display: flex; justify-content: center; background: var(--bg);
+    color: var(--text); font-family: var(--ui); min-height: 100vh; display: flex; justify-content: center; background: var(--bg);
     font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
   }
-  /* мелкая «меловая пыль» вместо неонового свечения */
+  /* едва заметная фактура ткани */
   body::before {
-    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .5;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 .93  0 0 0 0 .91  0 0 0 0 .84  0 0 0 .09 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>");
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .55;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='7'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .05 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
   }
-  .app { position: relative; z-index: 1; width: 100%; max-width: 440px; padding: calc(12px + env(safe-area-inset-top)) 16px calc(104px + env(safe-area-inset-bottom)); }
-  button { font-family: inherit; cursor: pointer; color: inherit; transition: transform .1s, box-shadow .1s, opacity .2s; }
-  button:active { transform: translateY(2px); }
+  .app { position: relative; z-index: 1; width: 100%; max-width: 440px; padding: calc(12px + env(safe-area-inset-top)) 16px calc(92px + env(safe-area-inset-bottom)); }
+  button { font-family: inherit; cursor: pointer; color: inherit; transition: transform .1s, opacity .2s, background .2s, border-color .2s; }
+  button:active { transform: translateY(1px) scale(.99); }
   input { font-family: inherit; }
   svg.ic { width: 1em; height: 1em; flex: none; }
   .busy .lockable { opacity: .5; pointer-events: none; }
-  .nm, .cap, .sec, .sh-title, .pn, .result, .pick, .strip b, .cta, .ghost, .chips button, .mini button, .nav button, .grid4 button, .wrow .t, .op .t, .stat small, .pcard .pr small, .toast, .un { font-family: var(--hand); }
-
-  /* ---------- шапка ---------- */
-  .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-  .who { display: flex; align-items: center; gap: 10px; min-width: 0; }
-  .avatar { width: 44px; height: 44px; border-radius: 47% 53% 50% 50% / 52% 48% 52% 48%; flex: none; overflow: hidden; display: grid; place-items: center;
-    font-family: var(--hand); font-size: 22px; background: var(--gold); color: var(--ink); border: 2.5px solid var(--text); }
-  .avatar img { width: 100%; height: 100%; object-fit: cover; }
-  .nm { font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; line-height: 1.1; }
-  .un { color: var(--muted); font-size: 14px; }
-  .wallet { display: flex; align-items: center; gap: 8px; padding: 5px 5px 5px 12px; border-radius: var(--wob); background: var(--surface);
-    border: 2.5px solid var(--text); box-shadow: 3px 3px 0 var(--ink); font-family: var(--hand); font-size: 24px; }
-  .wallet .ic { font-size: 22px; }
-  .wallet #bal { color: var(--gold); min-width: 18px; text-align: right; }
-  .wallet.pop { animation: pop .4s; }
-  @keyframes pop { 40% { transform: scale(1.08) rotate(-1.5deg); } }
-  .plus { width: 36px; height: 36px; border-radius: 50%; border: 2.5px solid var(--ink); display: grid; place-items: center; font-size: 20px; color: var(--ink);
-    background: var(--gold); box-shadow: 0 3px 0 var(--ink); }
-  .plus:active { box-shadow: 0 1px 0 var(--ink); }
-  .testbar { margin: 0 0 12px; padding: 7px 12px; border-radius: var(--wob2); border: 2px dashed var(--gold); color: var(--gold); font-size: 13px; text-align: center; line-height: 1.4; }
 
   /* ---------- виды ---------- */
   .view { display: none; }
   .view.on { display: block; animation: viewIn .25s ease both; }
   @keyframes viewIn { from { opacity: 0; } to { opacity: 1; } }
 
-  .strip { display: flex; gap: 7px; justify-content: center; min-height: 32px; margin-bottom: 10px; overflow: hidden; }
-  .strip b { padding: 4px 11px; border-radius: var(--wob); font-size: 15px; font-weight: 400; white-space: nowrap; animation: chipIn .25s ease both; border: 2px solid var(--text); }
-  .strip b:nth-child(odd) { transform: rotate(-1.6deg); } .strip b:nth-child(even) { transform: rotate(1.3deg); }
-  .strip b.w { background: var(--gold); color: var(--ink); border-color: var(--ink); }
-  .strip b.l { background: transparent; border: 2px dashed var(--line); color: var(--muted); }
+  .strip { display: flex; gap: 6px; justify-content: center; min-height: 30px; margin-bottom: 10px; overflow: hidden; }
+  .strip b { padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 800; white-space: nowrap; animation: chipIn .25s ease both; }
+  .strip b.w { background: var(--brass); color: var(--brassInk); }
+  .strip b.l { background: var(--surface); border: 1px solid var(--line); color: var(--muted); }
   @keyframes chipIn { from { opacity: 0; } to { opacity: 1; } }
 
-  .stage { position: relative; overflow: hidden; border-radius: 22px 28px 20px 30px / 28px 20px 30px 22px; margin-bottom: 16px; padding: 26px 12px 16px; text-align: center;
-    background: var(--bg2); border: 3px solid var(--text); box-shadow: 4px 4px 0 var(--ink); }
-  .result { display: inline-block; min-height: 34px; margin-top: 12px; padding: 5px 16px; border-radius: var(--wob); font-size: 18px;
-    border: 2px dashed var(--line); color: var(--muted); }
-  .result.win { color: var(--ink); background: var(--win); border: 2px solid var(--ink); }
-  .result.lose { color: var(--lose); border: 2px dashed var(--lose); }
+  .stage { position: relative; overflow: hidden; border-radius: 22px; margin-bottom: 12px; padding: 22px 12px 14px; text-align: center;
+    background: var(--bg2); border: 1px solid var(--line2); box-shadow: inset 0 1px 0 rgba(255,255,255,.05); }
+  .result { display: inline-block; min-height: 34px; margin-top: 12px; padding: 6px 16px; border-radius: 999px; font-size: 14px; font-weight: 700;
+    background: var(--surface); border: 1px solid var(--line); color: var(--muted); }
+  .result.win { color: var(--brassInk); background: var(--win); border-color: transparent; }
+  .result.lose { color: var(--lose); border-color: rgba(224,122,108,.4); }
 
-  .cta { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; border: 3px solid var(--ink); border-radius: 16px 20px 15px 21px / 20px 15px 21px 16px; padding: 14px;
-    font-size: 24px; font-weight: 400; color: #fff6e6; position: relative; background: var(--red); box-shadow: 0 5px 0 var(--ink); }
-  .cta:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+  .cta { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 14px; padding: 16px;
+    font-size: 17px; font-weight: 800; color: var(--brassInk); background: var(--brass);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 3px 0 var(--brass2), 0 8px 16px rgba(0,0,0,.25); }
+  .cta:active { transform: translateY(2px); box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 1px 0 var(--brass2); }
   .cta:disabled { opacity: .5; }
-  .cta.gold { color: var(--ink); background: var(--gold); }
-  .cta .ic { font-size: 20px; }
-  .ghost { width: 100%; margin-top: 12px; border: 2.5px dashed var(--line); background: transparent; border-radius: var(--wob2); padding: 11px; font-size: 18px; color: var(--text); }
+  .cta .ic { font-size: 18px; }
+  .ghost { width: 100%; margin-top: 10px; border: 1px solid var(--line2); background: transparent; border-radius: 14px; padding: 14px; font-size: 15px; font-weight: 700; color: var(--text); }
 
   /* ---------- панель ставок ---------- */
-  .panel { margin-top: 16px; }
-  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .card { background: var(--surface); border: 2.5px solid var(--line); border-radius: var(--wob); padding: 12px 14px; }
-  .two .card:nth-child(2) { border-radius: var(--wob2); }
-  .cap { color: var(--muted); font-size: 15px; margin-bottom: 4px; }
+  .panel { margin-top: 14px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; box-shadow: inset 0 1px 0 rgba(255,255,255,.04); }
+  .cap { color: var(--muted); font-family: var(--hand); font-size: 20px; line-height: 1; margin-bottom: 6px; }
   .field { display: flex; align-items: center; gap: 6px; }
-  .field .ic { font-size: 22px; }
-  .field .x { font-family: var(--hand); font-size: 26px; color: var(--gold); }
-  .field input { width: 100%; min-width: 0; background: transparent; border: 0; outline: none; color: var(--text); font-family: var(--hand); font-size: 30px; padding: 0; }
+  .field .ic { font-size: 21px; }
+  .field .x { font-family: var(--serif); font-size: 24px; font-weight: 700; color: var(--brass); }
+  .field input { width: 100%; min-width: 0; background: transparent; border: 0; outline: none; color: var(--text); font-family: var(--serif); font-size: 26px; font-weight: 700; padding: 0; }
   input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   input[type=number] { -moz-appearance: textfield; }
   .mini { display: flex; gap: 6px; margin-top: 8px; }
-  .mini button { flex: 1; background: transparent; border: 2px solid var(--line); border-radius: 10px 13px 9px 12px; padding: 4px 0; font-size: 15px; color: var(--text); }
-  .info { margin-top: 8px; display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
-  .info b { color: var(--text); font-weight: 600; }
-  .chips { display: flex; gap: 8px; margin-top: 12px; overflow-x: auto; scrollbar-width: none; padding: 2px 2px 4px; }
+  .mini button { flex: 1; background: var(--surface2); border: 0; border-radius: 9px; padding: 7px 0; font-size: 12px; font-weight: 800; color: var(--muted); }
+  .info { margin-top: 8px; display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+  .info b { color: var(--text); font-weight: 700; }
+  .chips { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
-  .chips button { flex: 1 0 auto; min-width: 54px; background: transparent; border: 2.5px solid var(--line); border-radius: var(--wob); padding: 7px 12px; font-size: 18px; color: var(--text); }
-  .chips button:nth-child(even) { border-radius: var(--wob2); }
-  .chips button.sel { color: var(--ink); background: var(--teal); border-color: var(--ink); box-shadow: 0 3px 0 var(--ink); }
-  .bet-chips button.sel { background: var(--gold); }
-  .hint { color: var(--muted); font-size: 13px; text-align: center; margin-top: 14px; line-height: 1.5; }
+  .chips button { flex: 1 0 auto; min-width: 54px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; font-size: 14px; font-weight: 800; color: var(--muted); }
+  .chips button.sel { color: var(--brassInk); background: var(--brass); border-color: var(--brass); }
+  .hint { color: var(--muted); font-family: var(--hand); font-size: 19px; text-align: center; margin-top: 14px; line-height: 1.25; }
 
   /* ---------- колесо ---------- */
   .wheel-wrap { position: relative; width: 310px; height: 310px; margin: 4px auto 2px; }
-  .ring { position: absolute; inset: -4px; border-radius: 50%; z-index: 1; pointer-events: none; background: var(--text);
+  .ring { position: absolute; inset: -4px; border-radius: 50%; z-index: 1; pointer-events: none;
+    background: conic-gradient(from 30deg, #e8cb82, #b8913f, #e8cb82, #b8913f, #e8cb82);
     -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 13px), #000 calc(100% - 12px));
             mask: radial-gradient(farthest-side, transparent calc(100% - 13px), #000 calc(100% - 12px)); }
-  .led { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px; border-radius: 50%; z-index: 2; background: var(--bg2); }
-  .wheelbox { position: absolute; inset: 11px; border-radius: 50%; overflow: hidden; background: var(--bg2); border: 3px solid var(--ink); }
+  .led { position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px; border-radius: 50%; z-index: 2; background: var(--bg2); opacity: .75; }
+  .wheelbox { position: absolute; inset: 11px; border-radius: 50%; overflow: hidden; background: var(--bg2); box-shadow: 0 0 0 2px var(--bg2); }
   .wheelbox canvas { width: 100%; height: 100%; display: block; transition: transform 5.2s cubic-bezier(.1,.62,.08,1); will-change: transform; }
-  .pin { position: absolute; top: -14px; left: 50%; width: 34px; height: 44px; margin-left: -17px; z-index: 5; transform-origin: 50% 14px; }
+  .pin { position: absolute; top: -14px; left: 50%; width: 34px; height: 44px; margin-left: -17px; z-index: 5; transform-origin: 50% 14px; filter: drop-shadow(0 3px 3px rgba(0,0,0,.4)); }
   .pin svg { width: 100%; height: 100%; }
   .spinning .pin { animation: pinTick .16s infinite alternate; }
   @keyframes pinTick { from { transform: rotate(-7deg); } to { transform: rotate(5deg); } }
   .hub { position: absolute; top: 50%; left: 50%; width: 66px; height: 66px; margin: -33px 0 0 -33px; border-radius: 50%; z-index: 4;
-    display: grid; place-items: center; font-size: 30px; background: var(--bg2); border: 4px solid var(--text); }
+    display: grid; place-items: center; font-size: 28px; background: var(--bg2); border: 3px solid var(--brass); }
+
+  /* ---------- апгрейдер ---------- */
+  .ugauge { position: relative; width: 280px; height: 280px; margin: 0 auto; }
+  .ugauge svg.ring2 { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .ugauge .upcenter { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .upct { font-family: var(--serif); font-weight: 800; font-size: 46px; line-height: 1; }
+  .upct.hi { color: var(--win); } .upct.mid { color: var(--brass); } .upct.lo { color: var(--lose); }
+  .uptier { font-family: var(--hand); font-size: 22px; color: var(--muted); margin-top: 2px; }
+  .upmul { margin-top: 6px; font-weight: 800; font-size: 13px; color: var(--muted); }
+  .upmul b { color: var(--text); }
+  .needle { position: absolute; inset: 0; transform-origin: 50% 50%; transition: transform 4.4s cubic-bezier(.1,.62,.08,1); will-change: transform; pointer-events: none; }
+  .needle::before { content: ""; position: absolute; top: -4px; left: 50%; margin-left: -9px; width: 0; height: 0;
+    border-left: 9px solid transparent; border-right: 9px solid transparent; border-top: 22px solid var(--brass); filter: drop-shadow(0 2px 2px rgba(0,0,0,.45)); }
+  .spinning .needle::before { border-top-color: #f0d68f; }
+  .slide { width: 100%; margin: 10px 0 2px; -webkit-appearance: none; appearance: none; height: 6px; border-radius: 3px; background: var(--surface2); outline: none; }
+  .slide::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: var(--brass); border: 3px solid var(--bg); box-shadow: 0 0 0 1px var(--brass2); }
+  .slide::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--brass); border: 3px solid var(--bg); }
+  .up-chips button { min-width: 48px; padding: 10px 8px; }
 
   /* ---------- кубик ---------- */
   .scene { perspective: 700px; height: 190px; display: flex; align-items: center; justify-content: center; position: relative; }
@@ -137,8 +131,8 @@
   .tilt { width: 100%; height: 100%; transform-style: preserve-3d; transform: rotateX(-20deg) rotateY(-24deg); }
   .cube { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 1.7s cubic-bezier(.15,.7,.2,1); }
   .face { position: absolute; width: var(--size); height: var(--size); border-radius: 12px; padding: 15px; display: grid; grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(3,1fr);
-    background: #efe9d8; border: 3px solid var(--ink); backface-visibility: visible; }
-  .core { position: absolute; width: var(--size); height: var(--size); background: #d6cfba; backface-visibility: visible; }
+    background: #f3efe3; box-shadow: inset 0 0 0 2px rgba(0,0,0,.07), inset 0 -8px 14px rgba(0,0,0,.08); backface-visibility: visible; }
+  .core { position: absolute; width: var(--size); height: var(--size); background: #d9d3c0; backface-visibility: visible; }
   .c1 { transform: none; } .c2 { transform: rotateY(90deg); } .c3 { transform: rotateX(90deg); }
   .f1 { transform: rotateY(0deg) translateZ(calc(var(--size) / 2)); }
   .f6 { transform: rotateY(180deg) translateZ(calc(var(--size) / 2)); }
@@ -146,112 +140,171 @@
   .f4 { transform: rotateY(-90deg) translateZ(calc(var(--size) / 2)); }
   .f2 { transform: rotateX(90deg) translateZ(calc(var(--size) / 2)); }
   .f5 { transform: rotateX(-90deg) translateZ(calc(var(--size) / 2)); }
-  .pip { width: 74%; height: 74%; margin: auto; border-radius: 50%; visibility: hidden; background: var(--ink); }
+  .pip { width: 76%; height: 76%; margin: auto; border-radius: 50%; visibility: hidden; background: #1c2a25; box-shadow: inset 0 2px 3px rgba(0,0,0,.5); }
   .pip.on { visibility: visible; }
   .f1 .pip.on { background: var(--red); }
-  .shadow { position: absolute; bottom: 8px; left: 50%; width: 100px; height: 12px; margin-left: -50px; border-radius: 50%; background: rgba(0,0,0,.4); }
+  .shadow { position: absolute; bottom: 8px; left: 50%; width: 100px; height: 14px; margin-left: -50px; border-radius: 50%; background: rgba(0,0,0,.45); filter: blur(4px); }
   .shadow.go { animation: shadow 1.7s cubic-bezier(.3,.1,.3,1); }
   @keyframes shadow {
     0% { transform: scale(1); opacity: 1; } 38% { transform: scale(.6); opacity: .45; }
     62% { transform: scale(1); opacity: 1; } 74% { transform: scale(.85); opacity: .75; } 88%,100% { transform: scale(1); opacity: 1; }
   }
-  .picks { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
-  .pick { background: var(--surface); border: 2.5px solid var(--line); border-radius: var(--wob); padding: 14px 8px; text-align: center; font-size: 24px; line-height: 1.2; }
-  .pick:nth-child(2) { border-radius: var(--wob2); }
-  .pick small { display: block; color: var(--muted); font-size: 15px; }
-  .pick.sel.even { border-color: var(--ink); background: var(--teal); color: var(--ink); box-shadow: 0 4px 0 var(--ink); }
-  .pick.sel.odd { border-color: var(--ink); background: var(--coral); color: var(--ink); box-shadow: 0 4px 0 var(--ink); }
-  .pick.sel small { color: var(--ink); }
+  .picks { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .pick { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px 8px; text-align: center; font-family: var(--serif); font-size: 21px; font-weight: 700; line-height: 1.2; }
+  .pick small { display: block; color: var(--muted); font-family: var(--hand); font-weight: 500; font-size: 19px; }
+  .pick.sel { color: var(--brassInk); border-color: transparent; }
+  .pick.sel small { color: var(--brassInk); }
+  .pick.sel.even { background: var(--brass); }
+  .pick.sel.odd { background: #e7d3a2; }
 
   /* ---------- профиль ---------- */
-  .pcard { display: flex; justify-content: space-between; align-items: center; padding: 18px; border-radius: 22px 28px 20px 30px / 28px 20px 30px 22px; margin-bottom: 12px;
-    background: var(--surface); border: 3px solid var(--text); box-shadow: 4px 4px 0 var(--ink); }
-  .pcard .pn { font-size: 24px; }
+  .pcard { display: flex; justify-content: space-between; align-items: center; padding: 18px; border-radius: 20px; margin-bottom: 10px; background: var(--surface); border: 1px solid var(--line2); }
+  .pcard .pn { font-size: 18px; font-weight: 800; }
   .pcard .pr { text-align: right; }
-  .pcard .pr small { color: var(--muted); font-size: 15px; }
-  .pcard .pb { margin-top: 2px; font-family: var(--hand); font-size: 38px; color: var(--gold); display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
-  .pcard .pb .ic { font-size: 28px; }
+  .pcard .pr small { color: var(--muted); font-family: var(--hand); font-size: 20px; }
+  .pcard .pb { margin-top: 0; font-family: var(--serif); font-size: 34px; font-weight: 800; color: var(--brass); display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
+  .pcard .pb .ic { font-size: 26px; }
   .tri { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .stat { background: var(--surface); border: 2px solid var(--line); border-radius: var(--wob); padding: 11px 13px; }
-  .stat:nth-child(even) { border-radius: var(--wob2); }
-  .stat small { color: var(--muted); font-size: 15px; }
-  .stat div { font-family: var(--hand); font-size: 24px; margin-top: 2px; white-space: nowrap; }
-  .sec { color: var(--text); font-size: 20px; margin: 22px 2px 10px; padding-bottom: 4px; border-bottom: 2px dashed var(--line); }
-  .wrow { width: 100%; display: flex; align-items: center; gap: 14px; text-align: left; background: var(--surface); border: 2.5px solid var(--line); border-radius: var(--wob); padding: 12px 14px; margin-bottom: 10px; }
-  .wrow:nth-of-type(even) { border-radius: var(--wob2); }
-  .gi { width: 44px; height: 44px; border-radius: 47% 53% 50% 50% / 52% 48% 52% 48%; display: grid; place-items: center; font-size: 22px; background: var(--surface2); border: 2px solid var(--line); flex: none; }
-  .gi.dep { color: var(--ink); background: var(--win); border-color: var(--ink); }
-  .gi.wd { color: var(--ink); background: var(--gold); border-color: var(--ink); }
-  .gi.hist { color: var(--ink); background: var(--teal); border-color: var(--ink); }
-  .wrow .t { flex: 1; font-size: 20px; }
-  .wrow .t small { display: block; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--muted); font-weight: 400; font-size: 13px; margin-top: 2px; }
-  .wrow .chev { color: var(--muted); font-size: 18px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 11px 13px; }
+  .stat small { color: var(--muted); font-family: var(--hand); font-size: 19px; line-height: 1; }
+  .stat div { font-family: var(--serif); font-size: 19px; font-weight: 700; margin-top: 4px; white-space: nowrap; }
+  .sec { font-family: var(--serif); font-size: 20px; font-weight: 700; margin: 22px 2px 10px; padding-bottom: 8px;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='6' viewBox='0 0 120 6'><path d='M1 3.5 C 12 .8, 20 5.4, 32 3 S 52 1, 64 3.4 S 88 5, 100 2.6 S 114 3.2, 119 2.4' fill='none' stroke='%23d9b25b' stroke-width='1.6' stroke-linecap='round'/></svg>") no-repeat left bottom; }
+  .wrow { width: 100%; display: flex; align-items: center; gap: 14px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; margin-bottom: 8px; }
+  .gi { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 21px; background: var(--surface2); flex: none; }
+  .gi.dep { color: var(--win); background: rgba(95,207,154,.14); }
+  .gi.wd { color: var(--brass); background: rgba(217,178,91,.14); }
+  .gi.hist { color: #9cc3d5; background: rgba(156,195,213,.13); }
+  .wrow .t { flex: 1; font-weight: 700; font-size: 15px; }
+  .wrow .t small { display: block; color: var(--muted); font-weight: 500; font-size: 12.5px; margin-top: 3px; }
+  .wrow .chev { color: var(--muted); font-size: 17px; }
   .empty { color: var(--muted); text-align: center; padding: 26px; font-size: 14px; }
 
   /* ---------- шторки ---------- */
-  .sheet-back { position: fixed; inset: 0; z-index: 60; background: rgba(8,14,11,.72); opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .sheet-back { position: fixed; inset: 0; z-index: 60; background: rgba(4,10,8,.7); opacity: 0; pointer-events: none; transition: opacity .2s; }
   .sheet-back.on { opacity: 1; pointer-events: auto; }
-  .sheet { position: fixed; z-index: 61; left: 50%; bottom: 0; width: 100%; max-width: 440px; transform: translate(-50%, 105%); transition: transform .3s cubic-bezier(.2,.9,.3,1);
-    border-radius: 24px 30px 0 0 / 30px 24px 0 0; padding: 10px 16px calc(22px + env(safe-area-inset-bottom)); background: var(--bg2);
-    border: 3px solid var(--text); border-bottom: 0; max-height: 92vh; overflow-y: auto; }
+  .sheet { position: fixed; z-index: 61; left: 50%; bottom: 0; width: 100%; max-width: 440px; transform: translate(-50%, 105%); transition: transform .32s cubic-bezier(.2,.9,.3,1);
+    border-radius: 24px 24px 0 0; padding: 10px 16px calc(22px + env(safe-area-inset-bottom)); background: #12221d;
+    border: 1px solid var(--line2); border-bottom: 0; max-height: 92vh; overflow-y: auto; }
   .sheet.on { transform: translate(-50%, 0); }
-  .grab { width: 44px; height: 5px; border-radius: 3px; background: var(--line); margin: 2px auto 14px; }
-  .sh-title { font-size: 26px; text-align: center; margin-bottom: 14px; }
-  .sh-row { display: flex; justify-content: space-between; color: var(--muted); font-size: 14px; margin: 0 4px 8px; }
-  .amt { display: flex; align-items: center; gap: 10px; background: var(--bg); border: 2.5px solid var(--line); border-radius: var(--wob); padding: 12px 16px; margin-bottom: 12px; }
-  .amt:focus-within { border-color: var(--gold); }
-  .amt .ic { font-size: 26px; }
-  .amt input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: var(--text); font-family: var(--hand); font-size: 32px; }
-  .amt .max { border: 0; background: transparent; color: var(--gold); font-family: var(--hand); font-size: 20px; padding: 6px; }
+  .grab { width: 40px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.18); margin: 2px auto 14px; }
+  .sh-title { font-family: var(--serif); font-size: 21px; font-weight: 700; text-align: center; margin-bottom: 14px; }
+  .sh-row { display: flex; justify-content: space-between; color: var(--muted); font-size: 13px; margin: 0 4px 8px; }
+  .amt { display: flex; align-items: center; gap: 10px; background: var(--bg2); border: 1.5px solid var(--line); border-radius: 16px; padding: 12px 16px; margin-bottom: 12px; }
+  .amt:focus-within { border-color: var(--brass); }
+  .amt .ic { font-size: 25px; }
+  .amt input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: var(--text); font-family: var(--serif); font-size: 28px; font-weight: 700; }
+  .amt .max { border: 0; background: transparent; color: var(--brass); font-weight: 800; font-size: 13px; padding: 6px; }
   .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
-  .grid4 button { background: transparent; border: 2.5px solid var(--line); border-radius: var(--wob); padding: 11px 0; font-size: 17px; color: var(--text); }
-  .grid4 button:nth-child(even) { border-radius: var(--wob2); }
-  .grid4 button.sel { border-color: var(--ink); background: var(--gold); color: var(--ink); box-shadow: 0 3px 0 var(--ink); }
-  .sh-icon { width: 76px; height: 76px; margin: 4px auto 12px; border-radius: 47% 53% 50% 50% / 52% 48% 52% 48%; display: grid; place-items: center; font-size: 38px;
-    background: var(--surface); border: 3px solid var(--gold); color: var(--gold); }
-  .sh-icon.ok { border-color: var(--win); color: var(--win); }
-  .sh-text { text-align: center; color: var(--muted); font-size: 15px; line-height: 1.5; margin-bottom: 18px; }
+  .grid4 button { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 0; font-size: 14px; font-weight: 800; }
+  .grid4 button.sel { border-color: var(--brass); background: rgba(217,178,91,.16); color: var(--brass); }
+  .sh-icon { width: 72px; height: 72px; margin: 4px auto 12px; border-radius: 50%; display: grid; place-items: center; font-size: 34px; background: var(--surface); border: 1.5px solid var(--line2); color: var(--brass); }
+  .sh-icon.ok { border-color: rgba(95,207,154,.5); color: var(--win); }
+  .sh-text { text-align: center; color: var(--muted); font-size: 14.5px; line-height: 1.55; margin-bottom: 18px; }
   .sh-text b { color: var(--text); }
-  .sh-note { text-align: center; color: var(--gold); font-size: 13px; margin-top: 12px; line-height: 1.4; }
-  .rows .r { display: flex; justify-content: space-between; gap: 14px; padding: 12px 4px; border-bottom: 2px dashed var(--line); font-size: 15px; }
+  .sh-note { text-align: center; color: var(--brass); font-family: var(--hand); font-size: 19px; margin-top: 12px; line-height: 1.2; }
+  .spin { width: 48px; height: 48px; border-radius: 50%; border: 4px solid var(--surface2); border-top-color: var(--brass); animation: rot 1s linear infinite; margin: 8px auto 16px; }
+  @keyframes rot { to { transform: rotate(360deg); } }
+  .rows .r { display: flex; justify-content: space-between; gap: 14px; padding: 12px 4px; border-bottom: 1px solid var(--line); font-size: 14.5px; }
   .rows .r span:first-child { color: var(--muted); }
-  .rows .r span:last-child { font-weight: 600; text-align: right; word-break: break-all; }
+  .rows .r span:last-child { font-weight: 700; text-align: right; word-break: break-all; }
   .rows { margin-bottom: 18px; }
   .oplist { max-height: 60vh; overflow-y: auto; }
-  .op { display: flex; align-items: center; gap: 12px; padding: 10px 4px; border-bottom: 2px dashed var(--line); }
-  .op .gi { width: 40px; height: 40px; font-size: 20px; }
-  .op .t { flex: 1; font-size: 18px; }
-  .op .t small { display: block; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--muted); font-weight: 400; font-size: 12px; margin-top: 2px; }
-  .op .r { font-family: var(--hand); font-size: 20px; }
+  .op { display: flex; align-items: center; gap: 12px; padding: 10px 4px; border-bottom: 1px solid var(--line); }
+  .op .gi { width: 38px; height: 38px; font-size: 19px; }
+  .op .t { flex: 1; font-weight: 700; font-size: 14.5px; }
+  .op .t small { display: block; color: var(--muted); font-weight: 500; font-size: 12px; margin-top: 2px; }
+  .op .r { font-weight: 800; font-size: 14.5px; }
   .op .r.w { color: var(--win); } .op .r.l { color: var(--lose); } .op .r.n { color: var(--muted); }
 
   /* ---------- прочее ---------- */
-  .conf { position: absolute; top: 45%; left: 50%; width: 9px; height: 9px; border-radius: 2px; pointer-events: none; opacity: 0; z-index: 9; }
+  .conf { position: absolute; top: 45%; left: 50%; width: 8px; height: 11px; border-radius: 2px; pointer-events: none; opacity: 0; z-index: 9; }
   @keyframes fly { 0% { opacity: 1; transform: translate(0,0) rotate(0); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); } }
-  .toast { position: fixed; top: calc(14px + env(safe-area-inset-top)); left: 50%; transform: translate(-50%, -140%); z-index: 80; padding: 10px 18px; border-radius: var(--wob);
-    font-size: 18px; background: var(--bg2); border: 2.5px solid var(--text); box-shadow: 3px 3px 0 var(--ink);
-    transition: transform .3s cubic-bezier(.2,.9,.3,1.2); max-width: 90%; text-align: center; }
+  .toast { position: fixed; top: calc(14px + env(safe-area-inset-top)); left: 50%; transform: translate(-50%, -140%); z-index: 80; padding: 11px 18px; border-radius: 14px;
+    font-size: 14px; font-weight: 700; background: #1b3029; border: 1px solid var(--line2); box-shadow: 0 10px 28px rgba(0,0,0,.45);
+    transition: transform .32s cubic-bezier(.2,.9,.3,1.2); max-width: 90%; text-align: center; }
   .toast.show { transform: translate(-50%, 0); }
-  .toast.err { border-color: var(--lose); color: var(--lose); }
-  .nav { position: fixed; z-index: 20; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom)); width: calc(100% - 28px); max-width: 412px;
-    display: flex; gap: 6px; padding: 6px; border-radius: 18px 22px 17px 23px / 22px 17px 23px 18px; background: var(--bg2); border: 3px solid var(--text); box-shadow: 4px 4px 0 var(--ink); }
-  .nav button { flex: 1; border: 2px solid transparent; background: transparent; border-radius: 12px 15px 11px 14px; padding: 6px 0 4px; font-size: 16px; color: var(--muted);
-    display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .nav button .ic { font-size: 24px; }
-  .nav button.on { color: var(--ink); background: var(--gold); border-color: var(--ink); transform: rotate(-1.2deg); }
+  .toast.err { border-color: rgba(224,122,108,.55); color: #f0b3a9; }
+
+  .who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .avatar { width: 42px; height: 42px; border-radius: 50%; flex: none; overflow: hidden; display: grid; place-items: center;
+    font-family: var(--serif); font-weight: 700; font-size: 19px; background: var(--surface2); color: var(--brass); border: 1.5px solid var(--line2); }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .un { color: var(--muted); font-family: var(--hand); font-size: 19px; line-height: 1; margin-top: 2px; }
+  .strip:empty { display: none; }
+  /* ---------- новая раскладка: вкладки игр сверху, касса и ставка внизу ---------- */
+  .top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .seg { flex: 1; display: flex; gap: 2px; min-width: 0; }
+  .seg button { flex: 1; position: relative; border: 0; background: transparent; padding: 10px 2px 12px; font-family: var(--serif); font-size: 16px; font-weight: 700; color: var(--muted);
+    display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+  .seg button .ic { font-size: 16px; }
+  .seg button.on { color: var(--text); }
+  .seg button.on::after { content: ""; position: absolute; left: 6px; right: 6px; bottom: 2px; height: 6px;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='6' viewBox='0 0 120 6' preserveAspectRatio='none'><path d='M1 3.5 C 12 .8, 20 5.4, 32 3 S 52 1, 64 3.4 S 88 5, 100 2.6 S 114 3.2, 119 2.4' fill='none' stroke='%23d9b25b' stroke-width='1.8' stroke-linecap='round'/></svg>") no-repeat center / 100% 100%; }
+  .avbtn { width: 42px; height: 42px; flex: none; padding: 0; border: 0; background: transparent; border-radius: 50%; }
+  .avbtn .avatar { width: 42px; height: 42px; }
+  .testbar { margin: 0 0 12px; padding: 7px 12px; border-radius: 12px; border: 1px dashed var(--line2); color: var(--brass); font-size: 12px; text-align: center; line-height: 1.4; }
+
+  .mulcard { display: flex; align-items: center; justify-content: space-between; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 16px; }
+  .mulcard .field { gap: 4px; }
+  .mulcard .field input { width: 96px; }
+  .mulside { text-align: right; min-width: 0; }
+  .mulside .info { justify-content: flex-end; gap: 8px; margin: 0 0 4px; font-size: 13px; }
+
+  .dock { position: fixed; z-index: 20; left: 50%; transform: translateX(-50%); bottom: 0; width: 100%; max-width: 440px;
+    padding: 10px 14px calc(12px + env(safe-area-inset-bottom)); background: var(--bg2); border-top: 1px solid var(--line2); border-radius: 20px 20px 0 0; }
+  .dock-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .dbal { display: flex; align-items: baseline; gap: 8px; }
+  .dbal span { font-family: var(--hand); font-size: 20px; color: var(--muted); }
+  .dbal b { font-family: var(--serif); font-size: 23px; color: var(--brass); display: inline-flex; align-items: center; gap: 5px; }
+  .dbal b .ic { font-size: 18px; }
+  .dbal.pop { animation: pop .4s; }
+  .dtopup { border: 1px solid var(--line2); background: transparent; color: var(--brass); border-radius: 999px; padding: 6px 14px; font-weight: 800; font-size: 13px; }
+  .dock-bet { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .betbox { flex: 1 1 36%; min-width: 0; display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 7px 10px; }
+  .betbox .ic { font-size: 18px; }
+  .betbox input { width: 100%; min-width: 0; background: transparent; border: 0; outline: none; color: var(--text); font-family: var(--serif); font-size: 20px; font-weight: 700; padding: 0; }
+  .quick { display: flex; gap: 6px; }
+  .quick button { display: inline-flex; align-items: center; gap: 4px; padding: 10px 11px; border-radius: 10px; border: 0; background: var(--surface2); color: var(--text); font-weight: 800; font-size: 13px; }
+  .quick button .ic { font-size: 13px; }
+  .quick button.sel { background: var(--brass); color: var(--brassInk); }
+  .dock .cta { padding: 14px; }
+  body[data-view="profile"] .app { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+  .app { padding-bottom: calc(176px + env(safe-area-inset-bottom)); }
+
+  /* ---------- профиль ---------- */
+  .pback { border: 0; background: transparent; color: var(--muted); font-family: var(--hand); font-size: 22px; padding: 2px 0 10px; display: flex; align-items: center; gap: 6px; }
+  .pback .ic { font-size: 16px; transform: rotate(180deg); }
+  .pass { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .pass .avatar { width: 64px; height: 64px; font-size: 26px; }
+  .pass .pn { font-family: var(--serif); font-size: 22px; font-weight: 800; line-height: 1.1; }
+  .bigbal { font-family: var(--serif); font-weight: 800; font-size: 40px; color: var(--brass); display: flex; align-items: center; gap: 8px; margin: 2px 0 14px; }
+  .bigbal .ic { font-size: 30px; }
+  .bigbal small { font-family: var(--hand); font-size: 22px; font-weight: 500; color: var(--muted); }
+  .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 6px; }
+  .pbtn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 8px; border-radius: 14px; font-weight: 800; font-size: 15px; border: 1px solid var(--line2); background: transparent; color: var(--text); }
+  .pbtn.main { background: var(--brass); border-color: transparent; color: var(--brassInk); box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 3px 0 var(--brass2); }
+  .pbtn .ic { font-size: 18px; }
+  .lg { display: flex; align-items: baseline; gap: 8px; padding: 8px 2px; font-size: 15px; }
+  .lg span { color: var(--muted); }
+  .lg i { flex: 1; border-bottom: 2px dotted rgba(217,178,91,.4); transform: translateY(-3px); min-width: 12px; }
+  .lg b { font-family: var(--serif); font-size: 17px; font-weight: 700; }
+  .lg b .ic { font-size: 13px; }
+  .more { width: 100%; border: 0; background: transparent; color: var(--brass); font-family: var(--hand); font-size: 21px; padding: 8px 0 0; text-align: left; }
   @media (prefers-reduced-motion: reduce) { * { animation-duration: .01s !important; transition-duration: .01s !important; } }
 </style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
-    <linearGradient id="gStar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e3b341"/><stop offset="1" stop-color="#e3b341"/></linearGradient>
+    <linearGradient id="gStar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#efd58f"/><stop offset="1" stop-color="#cfa44c"/></linearGradient>
   </defs>
-  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.4l2.95 6.2 6.75.85-4.98 4.7 1.28 6.7L12 17.5l-6 3.35 1.28-6.7L2.3 9.45l6.75-.85z" fill="url(#gStar)" stroke="#121a17" stroke-width="1.1" stroke-linejoin="round"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.4l2.95 6.2 6.75.85-4.98 4.7 1.28 6.7L12 17.5l-6 3.35 1.28-6.7L2.3 9.45l6.75-.85z" fill="url(#gStar)" stroke="#8a6b27" stroke-width=".8" stroke-linejoin="round"/></symbol>
   <symbol id="i-wheel" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.2"/><path d="M12 3v6.8M12 14.2V21M3 12h6.8M14.2 12H21M5.6 5.6l4.8 4.8M13.6 13.6l4.8 4.8M18.4 5.6l-4.8 4.8M10.4 13.6l-4.8 4.8"/></g></symbol>
   <symbol id="i-dice" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/></g><g fill="currentColor"><circle cx="8.6" cy="8.6" r="1.4"/><circle cx="15.4" cy="8.6" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="8.6" cy="15.4" r="1.4"/><circle cx="15.4" cy="15.4" r="1.4"/></g></symbol>
   <symbol id="i-user" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></g></symbol>
+  <symbol id="i-upg" viewBox="0 0 24 24"><path d="M5 13l7-6 7 6M5 19l7-6 7 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
   <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -263,8 +316,12 @@
 
 <div class="app" id="app">
   <header class="top">
-    <div class="who"><div class="avatar" id="avTop"></div><div><div class="nm" id="nmTop"></div><div class="un" id="unTop"></div></div></div>
-    <div class="wallet" id="wallet"><svg class="ic"><use href="#i-star"/></svg><span id="bal">0</span><button class="plus" id="plus" aria-label="Пополнить"><svg class="ic"><use href="#i-plus"/></svg></button></div>
+    <nav class="seg" id="nav">
+      <button data-v="wheel" class="on"><svg class="ic"><use href="#i-wheel"/></svg>Колесо</button>
+      <button data-v="upgrade"><svg class="ic"><use href="#i-upg"/></svg>Апгрейд</button>
+      <button data-v="dice"><svg class="ic"><use href="#i-dice"/></svg>Кубик</button>
+    </nav>
+    <button class="avbtn" id="avBtn" aria-label="Профиль"><div class="avatar" id="avTop"></div></button>
   </header>
   <div class="testbar" id="testbar" hidden>Тестовый режим: пополнение и вывод проходят без реальных платежей, всё хранится на этом телефоне</div>
 
@@ -281,25 +338,22 @@
       </div>
       <div class="result" id="rWheel">Выбери множитель и крути</div>
     </div>
-    <button class="cta" id="goWheel"><svg class="ic"><use href="#i-play"/></svg><span>Крутить</span></button>
-    <div class="panel lockable">
-      <div class="two">
-        <div class="card">
-          <div class="cap">Ставка</div>
-          <div class="field"><svg class="ic"><use href="#i-star"/></svg><input class="bet-input" type="number" inputmode="numeric" min="1"></div>
-          <div class="mini"><button data-act="half">½</button><button data-act="double">×2</button><button data-act="max">MAX</button></div>
-        </div>
-        <div class="card">
-          <div class="cap">Множитель</div>
-          <div class="field"><span class="x">x</span><input id="xInput" type="number" inputmode="decimal" step="0.1" min="1.1" max="100"></div>
-          <div class="info"><span>Шанс <b id="chance">–</b></span></div>
-          <div class="info"><span>Приз <b>⭐ <span id="prize">0</span></b></span></div>
-        </div>
+    <div class="lockable">
+      <div class="chips x-chips" style="margin:0 0 10px"><button data-x="2">x2</button><button data-x="3">x3</button><button data-x="5">x5</button><button data-x="10">x10</button><button data-x="25">x25</button><button data-x="100">x100</button></div>
+      <div class="mulcard">
+        <div><div class="cap">Множитель</div><div class="field"><span class="x">x</span><input id="xInput" type="number" inputmode="decimal" step="0.5" min="2" max="100"></div></div>
+        <div class="mulside"><div class="info"><span>Шанс</span><b id="chance">–</b></div><div class="info"><span>Приз</span><b>⭐ <span id="prize">0</span></b></div></div>
       </div>
-      <div class="chips bet-chips"><button data-v="100">100</button><button data-v="500">500</button><button data-v="1000">1 000</button><button data-v="5000">5 000</button></div>
-      <div class="chips x-chips"><button data-x="1.5">x1.5</button><button data-x="2">x2</button><button data-x="3">x3</button><button data-x="5">x5</button><button data-x="10">x10</button><button data-x="25">x25</button><button data-x="100">x100</button></div>
     </div>
-    <div class="hint">Чем выше множитель, тем меньше шанс. Шанс всегда равен 90% ÷ множитель, колесо перестраивается под твой выбор.</div>
+    <div class="hint">Чем выше множитель, тем меньше шанс. Шанс = 90% ÷ множитель.</div>
+    <div class="dock">
+      <div class="dock-top"><div class="dbal"><span>на счету</span><b><svg class="ic"><use href="#i-star"/></svg><span class="balv" style="font:inherit;color:inherit">0</span></b></div><button class="dtopup" data-open="dep">+ Пополнить</button></div>
+      <div class="dock-bet">
+        <label class="betbox"><svg class="ic"><use href="#i-star"/></svg><input class="bet-input" type="number" inputmode="numeric" min="1"></label>
+        <div class="quick bet-chips"><button data-v="100"><svg class="ic"><use href="#i-star"/></svg>100</button><button data-v="500"><svg class="ic"><use href="#i-star"/></svg>500</button><button data-act="max">MAX</button></div>
+      </div>
+      <button class="cta" id="goWheel"><svg class="ic"><use href="#i-play"/></svg><span>Крутить</span></button>
+    </div>
   </section>
 
   <!-- КУБИК -->
@@ -319,36 +373,81 @@
       <button class="pick even" data-p="even">Чёт<small>2 · 4 · 6</small></button>
       <button class="pick odd" data-p="odd">Нечёт<small>1 · 3 · 5</small></button>
     </div>
-    <button class="cta gold" id="goDice"><svg class="ic"><use href="#i-dice"/></svg><span>Бросить кубик</span></button>
-    <div class="panel lockable">
-      <div class="card">
-        <div class="cap">Ставка</div>
-        <div class="field"><svg class="ic"><use href="#i-star"/></svg><input class="bet-input" type="number" inputmode="numeric" min="1"></div>
-        <div class="mini"><button data-act="half">½</button><button data-act="double">×2</button><button data-act="max">MAX</button></div>
-      </div>
-      <div class="chips bet-chips"><button data-v="100">100</button><button data-v="500">500</button><button data-v="1000">1 000</button><button data-v="5000">5 000</button></div>
-    </div>
     <div class="hint">Выигрыш: ставка × 1.9</div>
+    <div class="dock">
+      <div class="dock-top"><div class="dbal"><span>на счету</span><b><svg class="ic"><use href="#i-star"/></svg><span class="balv" style="font:inherit;color:inherit">0</span></b></div><button class="dtopup" data-open="dep">+ Пополнить</button></div>
+      <div class="dock-bet">
+        <label class="betbox"><svg class="ic"><use href="#i-star"/></svg><input class="bet-input" type="number" inputmode="numeric" min="1"></label>
+        <div class="quick bet-chips"><button data-v="100"><svg class="ic"><use href="#i-star"/></svg>100</button><button data-v="500"><svg class="ic"><use href="#i-star"/></svg>500</button><button data-act="max">MAX</button></div>
+      </div>
+      <button class="cta" id="goDice"><svg class="ic"><use href="#i-dice"/></svg><span>Бросить кубик</span></button>
+    </div>
+  </section>
+
+  <!-- АПГРЕЙДЕР -->
+  <section class="view" id="v-upgrade">
+    <div class="stage" id="stUp">
+      <div class="ugauge">
+        <svg class="ring2" viewBox="0 0 280 280">
+          <circle cx="140" cy="140" r="136" fill="none" stroke="rgba(217,178,91,.35)" stroke-width="1"/>
+          <circle cx="140" cy="140" r="100" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="1"/>
+          <circle cx="140" cy="140" r="118" fill="none" stroke="#3b2927" stroke-width="22"/>
+          <circle id="upArc" cx="140" cy="140" r="118" fill="none" stroke="#5fcf9a" stroke-width="22" stroke-dasharray="0 742" transform="rotate(-90 140 140)"/>
+        </svg>
+        <div class="upcenter">
+          <div class="upct" id="upPct">45%</div>
+          <div class="uptier" id="upTier">средний шанс</div>
+          <div class="upmul" id="upInfo"></div>
+        </div>
+        <div class="needle" id="upNeedle"></div>
+      </div>
+      <div class="result" id="rUp">Выбери шанс и жми «Апгрейд»</div>
+    </div>
+    <div class="lockable">
+      <div class="mulcard">
+        <div><div class="cap">Множитель</div><div class="field"><span class="x">x</span><input id="upMul" type="number" inputmode="decimal" min="1.1" max="100" step="0.1"></div></div>
+        <div class="mulside"><div class="info"><span>Выигрыш</span><b>⭐ <span id="upPrize">0</span></b></div></div>
+      </div>
+      <div class="card" style="margin-top:10px">
+        <div class="cap">Шанс на успех</div>
+        <input class="slide" id="upSlide" type="range" min="1" max="81" step="0.5" value="45">
+        <div class="info"><span>1%</span><span>81%</span></div>
+      </div>
+      <div class="chips up-chips" id="upMulChips"><button data-x="2">x2</button><button data-x="5">x5</button><button data-x="10">x10</button><button data-x="50">x50</button><button data-x="100">x100</button></div>
+      <div class="chips up-chips" id="upChChips"><button data-c="25">25%</button><button data-c="50">50%</button><button data-c="75">75%</button></div>
+    </div>
+    <div class="hint">Стрелка должна остановиться в зелёной зоне.</div>
+    <div class="dock">
+      <div class="dock-top"><div class="dbal"><span>на счету</span><b><svg class="ic"><use href="#i-star"/></svg><span class="balv" style="font:inherit;color:inherit">0</span></b></div><button class="dtopup" data-open="dep">+ Пополнить</button></div>
+      <div class="dock-bet">
+        <label class="betbox"><svg class="ic"><use href="#i-star"/></svg><input class="bet-input" type="number" inputmode="numeric" min="1"></label>
+        <div class="quick bet-chips"><button data-v="100"><svg class="ic"><use href="#i-star"/></svg>100</button><button data-v="500"><svg class="ic"><use href="#i-star"/></svg>500</button><button data-act="max">MAX</button></div>
+      </div>
+      <button class="cta" id="goUpgrade"><svg class="ic"><use href="#i-upg"/></svg><span>Апгрейд</span></button>
+    </div>
   </section>
 
   <!-- ПРОФИЛЬ -->
   <section class="view" id="v-profile">
-    <div class="pcard">
-      <div class="who"><div class="avatar" id="avBig"></div><div><div class="pn" id="nmBig"></div><div class="un" id="unBig"></div></div></div>
-      <div class="pr"><small>Баланс</small><div class="pb"><svg class="ic"><use href="#i-star"/></svg><span id="pBal">0</span></div></div>
+    <button class="pback" id="pBack"><svg class="ic"><use href="#i-chev"/></svg>к играм</button>
+    <div class="pass">
+      <div class="avatar" id="avBig"></div>
+      <div><div class="pn" id="nmBig"></div><div class="un" id="unBig"></div></div>
     </div>
-    <div class="tri">
-      <div class="stat"><small>Внесено</small><div>⭐ <span id="sDep">0</span></div></div>
-      <div class="stat"><small>Выведено</small><div>⭐ <span id="sWd">0</span></div></div>
-      <div class="stat"><small>Выиграно</small><div>⭐ <span id="sWon">0</span></div></div>
+    <div class="bigbal"><svg class="ic"><use href="#i-star"/></svg><span id="pBal">0</span><small>на счету</small></div>
+    <div class="acts">
+      <button class="pbtn main" id="wDep"><svg class="ic"><use href="#i-down"/></svg>Пополнить</button>
+      <button class="pbtn" id="wWd"><svg class="ic"><use href="#i-up"/></svg>Вывести</button>
     </div>
-    <div class="sec">Кошелёк</div>
-    <button class="wrow" id="wDep"><div class="gi dep"><svg class="ic"><use href="#i-down"/></svg></div><div class="t">Пополнить баланс<small>Звёзды</small></div><svg class="ic chev"><use href="#i-chev"/></svg></button>
-    <button class="wrow" id="wWd"><div class="gi wd"><svg class="ic"><use href="#i-up"/></svg></div><div class="t">Вывести звёзды<small id="wdLeft">Осталось сегодня</small></div><svg class="ic chev"><use href="#i-chev"/></svg></button>
-    <button class="wrow" id="wOps"><div class="gi hist"><svg class="ic"><use href="#i-clock"/></svg></div><div class="t">История операций<small>Пополнения, выводы и игры</small></div><svg class="ic chev"><use href="#i-chev"/></svg></button>
-    <div class="sec">Статистика игр</div>
-    <div class="stats" id="pStats"></div>
-    <div class="hint">Игровая валюта без реальной ценности.</div>
+    <div class="sec">Звёзды</div>
+    <div class="lg"><span>Внесено</span><i></i><b>⭐ <span id="sDep">0</span></b></div>
+    <div class="lg"><span>Выведено</span><i></i><b>⭐ <span id="sWd">0</span></b></div>
+    <div class="lg"><span>Выиграно</span><i></i><b>⭐ <span id="sWon">0</span></b></div>
+    <div class="sec">Последние операции</div>
+    <div class="oplist" id="pOps"></div>
+    <button class="more" id="wOps">вся история →</button>
+    <div class="sec">Игры</div>
+    <div id="pStats"></div>
   </section>
 </div>
 
@@ -356,11 +455,6 @@
 <div class="sheet" id="sheet"><div class="grab"></div><div id="sheetBody"></div></div>
 <div class="toast" id="toast"></div>
 
-<nav class="nav" id="nav">
-  <button data-v="wheel" class="on"><svg class="ic"><use href="#i-wheel"/></svg>Колесо</button>
-  <button data-v="dice"><svg class="ic"><use href="#i-dice"/></svg>Кубик</button>
-  <button data-v="profile"><svg class="ic"><use href="#i-user"/></svg>Профиль</button>
-</nav>
 
 <script>
 /* ============ НАСТРОЙКИ ============
@@ -372,12 +466,12 @@ const DEP_MAX = 100000, WD_LIMIT = 50000, RTP = 0.9;
 const DEP_CHIPS = [100, 500, 1000, 5000, 10000, 25000, 50000, 100000];
 
 const tg = window.Telegram && window.Telegram.WebApp;
-if (tg) { try { tg.ready(); tg.expand(); tg.setHeaderColor('#1f2f29'); tg.setBackgroundColor('#1f2f29'); if (tg.disableVerticalSwipes) tg.disableVerticalSwipes(); } catch (e) {} }
+if (tg) { try { tg.ready(); tg.expand(); tg.setHeaderColor('#0f1c18'); tg.setBackgroundColor('#0f1c18'); if (tg.disableVerticalSwipes) tg.disableVerticalSwipes(); } catch (e) {} }
 
 const $ = id => document.getElementById(id);
 const fmt = n => Math.floor(n + 1e-9).toLocaleString('ru-RU');
 const fx = x => String(Math.round(x * 100) / 100);
-const ICON = { wheel: 'i-wheel', dice: 'i-dice' };
+const ICON = { wheel: 'i-wheel', dice: 'i-dice', upgrade: 'i-upg' };
 const todayKey = () => new Date().toISOString().slice(0, 10);
 const pad = n => String(n).padStart(2, '0');
 function fdate(ts, sec) { const d = new Date(ts); return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}` + (sec ? ':' + pad(d.getSeconds()) : ''); }
@@ -390,6 +484,7 @@ function load() {
   return base;
 }
 let S = load();
+let lastDep = S.deposited || 0, waitingDep = false;
 function save() { if (REMOTE) return; try { localStorage.setItem('hub_state_v2', JSON.stringify(S)); } catch (e) {} }
 function pushOp(o) { o.ts = Date.now(); S.ops.unshift(o); S.ops = S.ops.slice(0, 100); }
 
@@ -408,7 +503,7 @@ async function apiCall(path, body) {
   if (!r.ok) throw new Error(j.error || 'Ошибка сервера');
   return j;
 }
-async function syncState() { if (!REMOTE) return; try { const r = await apiCall('/state'); Object.assign(S, r.state); render(); } catch (e) { toast('Нет связи: ' + ((e && e.message) || e), true); } }
+async function syncState() { if (!REMOTE) return; try { const r = await apiCall('/state'); Object.assign(S, r.state); lastDep = S.deposited || 0; render(); } catch (e) { toast('Нет связи: ' + ((e && e.message) || e), true); } }
 
 /* ---------- утилиты ---------- */
 function rndInt(n) { const a = new Uint32Array(1), lim = Math.floor(4294967296 / n) * n; do { crypto.getRandomValues(a); } while (a[0] >= lim); return a[0] % n; }
@@ -419,7 +514,7 @@ function say(el, text, cls) { el.className = 'result ' + (cls || ''); el.textCon
 let toastTimer;
 function toast(text, err) { const t = $('toast'); t.textContent = text; t.className = 'toast show' + (err ? ' err' : ''); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2400); }
 function confetti(box) {
-  const colors = ['#e3b341', '#efe9d8', '#c8473d', '#7fb6a2', '#d98a6a'];
+  const colors = ['#d9b25b', '#f1eee4', '#5fcf9a', '#c9473f', '#e7d3a2'];
   for (let i = 0; i < 36; i++) {
     const c = document.createElement('div'); c.className = 'conf'; c.style.background = colors[i % colors.length];
     const ang = Math.random() * Math.PI * 2, dist = 90 + Math.random() * 150;
@@ -432,20 +527,22 @@ function confetti(box) {
 
 /* ---------- баланс и отрисовка ---------- */
 let shown = S.balance, tw = null, bet = 100, busy = false, view = 'wheel', xVal = 2;
+function setBal(v) { document.querySelectorAll('.balv').forEach(e => e.textContent = fmt(v)); }
 function renderBalance() {
   if (tw) cancelAnimationFrame(tw);
   const from = shown, to = S.balance;
-  if (from === to) { $('bal').textContent = fmt(to); return; }
+  if (from === to) { setBal(to); return; }
   const t0 = performance.now(), dur = 520;
-  (function f(t) { const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); shown = from + (to - from) * e; $('bal').textContent = fmt(shown); if (k < 1) tw = requestAnimationFrame(f); else shown = to; })(t0);
+  (function f(t) { const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); shown = from + (to - from) * e; setBal(shown); if (k < 1) tw = requestAnimationFrame(f); else shown = to; })(t0);
 }
-function popBalance() { const w = $('wallet'); w.classList.remove('pop'); void w.offsetWidth; w.classList.add('pop'); }
+function popBalance() { document.querySelectorAll('.dbal').forEach(w => { w.classList.remove('pop'); void w.offsetWidth; w.classList.add('pop'); }); }
 function wdLeft() { return Math.max(0, WD_LIMIT - (S.wd && S.wd.d === todayKey() ? S.wd.u : 0)); }
 function render() {
   renderBalance();
   if (!busy) {
     $('goWheel').querySelector('span').textContent = S.balance <= 0 ? 'Пополнить баланс' : 'Крутить';
     $('goDice').querySelector('span').textContent = S.balance <= 0 ? 'Пополнить баланс' : 'Бросить кубик';
+    $('goUpgrade').querySelector('span').textContent = S.balance <= 0 ? 'Пополнить баланс' : 'Апгрейд';
   }
   if (view === 'profile') renderProfile();
 }
@@ -481,13 +578,13 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('input', e => {
   if (e.target.classList.contains('bet-input')) { const v = Math.floor(+e.target.value); if (v > 0) setBet(v, e.target); }
-  else if (e.target.id === 'xInput') { const v = parseFloat(e.target.value); if (v >= 1.1) setX(v, true); }
+  else if (e.target.id === 'xInput') { const v = parseFloat(e.target.value); if (v >= 2) setX(v, true); }
 });
 document.addEventListener('change', e => { if (e.target.id === 'xInput') setX(parseFloat(e.target.value) || 2); });
 
 /* ---------- навигация ---------- */
 function setView(v) {
-  view = v;
+  view = v; document.body.dataset.view = v;
   document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
   if (v === 'profile') renderProfile();
@@ -540,12 +637,50 @@ async function depositViaChat(a) {
     setTimeout(() => { try { tg.close(); } catch (e) {} }, 900);
   } catch (e) { toast(e.message, true); openDeposit(); }
 }
+/* ---------- ожидание зачисления ---------- */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+/* тихо обновляет состояние; возвращает, на сколько выросло пополнение (-1 при ошибке связи) */
+async function pullState() {
+  try {
+    const r = await apiCall('/state'), prev = lastDep;
+    Object.assign(S, r.state); lastDep = S.deposited || 0; render();
+    return Math.max(0, lastDep - prev);
+  } catch (e) { return -1; }
+}
+async function waitDeposit(a) {
+  waitingDep = true;
+  openSheet(`<div class="spin"></div><div class="sh-title">Зачисляем звёзды</div>` +
+    `<div class="sh-text">Платёж на <b>${fmt(a)} ⭐</b> получен. Обычно это занимает несколько секунд, иногда до пары минут.</div>`);
+  for (let i = 0; i < 20; i++) {            // ждём около 40 секунд
+    await sleep(2000);
+    const d = await pullState();
+    if (d > 0) {
+      waitingDep = false; popBalance(); haptic('success');
+      const op = (S.ops || []).find(o => o.k === 'dep');
+      if (op) openReceipt(op, 'Пополнение зачислено'); else { closeSheet(); toast('Пополнение зачислено'); }
+      return;
+    }
+  }
+  waitingDep = false;
+  openSheet(`<div class="sh-icon"><svg class="ic"><use href="#i-clock"/></svg></div><div class="sh-title">Платёж принят</div>` +
+    `<div class="sh-text">Если звёзды ещё не на балансе, ничего страшного: они придут в течение пары минут и зачислятся сами. Это окно можно закрыть и играть дальше.</div>` +
+    `<button class="cta" id="wdOk">Понятно</button>`);
+  $('wdOk').onclick = closeSheet;
+}
+async function autoSync() {
+  if (!REMOTE || busy || waitingDep) return;
+  const d = await pullState();
+  if (d > 0) { popBalance(); haptic('success'); toast('Звёзды зачислены: +' + fmt(d) + ' ⭐'); }
+}
+setInterval(autoSync, 12000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) autoSync(); });
+
 async function startDeposit(a) {
   if (REMOTE) {
     try {
       const r = await apiCall('/deposit', { amount: a });
       const onSt = async st => {
-        if (st === 'paid') { await syncState(); popBalance(); haptic('success'); const op = (S.ops || []).find(o => o.k === 'dep'); if (op) openReceipt(op, 'Пополнение зачислено'); else { closeSheet(); toast('Пополнение зачислено'); } }
+        if (st === 'paid') await waitDeposit(a);
         else if (st === 'failed') toast('Платёж не прошёл', true);
         else openDeposit();
       };
@@ -604,22 +739,25 @@ async function startWithdraw(a) {
 }
 
 /* ---- история операций ---- */
-function openOps() {
-  const rows = S.ops.map(o => {
+function opRow(o) {
     let icon, cls, title, sub = fdate(o.ts), amt, ac;
     if (o.k === 'dep') { icon = 'i-down'; cls = 'dep'; title = 'Пополнение'; amt = '+' + fmt(o.a); ac = 'w'; }
     else if (o.k === 'wd') { icon = 'i-up'; cls = 'wd'; title = 'Вывод'; amt = '−' + fmt(o.a); ac = 'n'; }
     else {
-      const d = o.p - o.b; icon = ICON[o.g] || 'i-star'; cls = ''; title = (o.g === 'wheel' ? 'Колесо' : 'Кубик') + (o.g === 'wheel' ? ' x' + fx(o.x) : '');
+      const d = o.p - o.b; icon = ICON[o.g] || 'i-star'; cls = ''; title = o.g === 'wheel' ? 'Колесо x' + fx(o.x) : o.g === 'upgrade' ? 'Апгрейд x' + fx(o.x) : 'Кубик';
       amt = d > 0 ? '+' + fmt(d) : d === 0 ? '0' : '−' + fmt(-d); ac = d > 0 ? 'w' : d === 0 ? 'n' : 'l'; sub = 'ставка ' + fmt(o.b) + ' · ' + sub;
     }
     return `<div class="op"><div class="gi ${cls}"><svg class="ic"><use href="#${icon}"/></svg></div><div class="t">${title}<small>${sub}</small></div><div class="r ${ac}">${amt} ⭐</div></div>`;
-  }).join('');
+}
+function openOps() {
+  const rows = S.ops.map(opRow).join('');
   openSheet(`<div class="sh-title">История операций</div><div class="oplist">${rows || '<div class="empty">Пока пусто</div>'}</div><button class="ghost" id="oClose">Закрыть</button>`);
   $('oClose').onclick = closeSheet;
 }
 
-$('plus').onclick = openDeposit;
+document.addEventListener('click', e => { if (e.target.closest('[data-open="dep"]')) openDeposit(); });
+$('avBtn').onclick = () => setView('profile');
+$('pBack').onclick = () => setView('wheel');
 $('wDep').onclick = openDeposit;
 $('wWd').onclick = openWithdraw;
 $('wOps').onclick = openOps;
@@ -662,15 +800,15 @@ function drawWheel() {
   for (let i = 0; i < N; i++) {
     const a0 = -Math.PI / 2 + i * step, a1 = a0 + step, win = WH.mask[i];
     c.beginPath(); c.moveTo(cx, cx); c.arc(cx, cx, R, a0, a1); c.closePath();
-    c.fillStyle = win ? '#e3b341' : (i % 2 ? '#2b443a' : '#35503f');
-    c.fill(); c.strokeStyle = 'rgba(239,233,216,.75)'; c.lineWidth = 3; c.lineJoin = 'round'; c.stroke();
+    c.fillStyle = win ? '#d9b25b' : (i % 2 ? '#183029' : '#1f3b32');
+    c.fill(); c.strokeStyle = 'rgba(255,255,255,.14)'; c.lineWidth = 2; c.lineJoin = 'round'; c.stroke();
     const arc = .72 * R * step;
     c.save(); c.translate(cx, cx); c.rotate((a0 + a1) / 2); c.translate(R * .74, 0);
     c.textAlign = 'center'; c.textBaseline = 'middle';
     if (win) {
       const size = Math.min(34, arc * .8);
-      if (size >= 9) { c.fillStyle = '#121a17'; c.font = `${size * 1.1}px Neucha, "Comic Sans MS", cursive`; c.fillText('x' + fx(xVal), 0, 0); }
-    } else if (arc > 16) { c.fillStyle = 'rgba(239,233,216,.38)'; c.font = `${Math.min(26, arc * .65)}px Neucha, "Comic Sans MS", cursive`; c.fillText('✕', 0, 0); }
+      if (size >= 9) { c.fillStyle = '#10211c'; c.font = `800 ${size}px Manrope, sans-serif`; c.fillText('x' + fx(xVal), 0, 0); }
+    } else if (arc > 16) { c.fillStyle = 'rgba(255,255,255,.2)'; c.font = `700 ${Math.min(24, arc * .6)}px Manrope, sans-serif`; c.fillText('✕', 0, 0); }
     c.restore();
   }
 }
@@ -683,7 +821,7 @@ function rebuildWheel() {
   drawWheel(); void wheelEl.offsetWidth; wheelEl.style.transition = '';
 }
 function setX(v, fromInput) {
-  xVal = Math.min(100, Math.max(1.1, Math.round(v * 100) / 100));
+  xVal = Math.min(100, Math.max(2, Math.round(v * 100) / 100));
   if (!fromInput) $('xInput').value = xVal;
   document.querySelectorAll('.x-chips button').forEach(b => b.classList.toggle('sel', +b.dataset.x === xVal));
   updatePrize();
@@ -693,6 +831,7 @@ function updatePrize() {
   const pct = RTP / xVal * 100;
   $('chance').textContent = (pct >= 10 ? Math.round(pct) : pct.toFixed(1)) + '%';
   $('prize').textContent = fmt(bet * xVal);
+  updateUpgrade();
 }
 function renderStrip() {
   $('whStrip').innerHTML = S.wh.slice(0, 7).map(h => h.w ? `<b class="w">x${fx(h.x)}</b>` : `<b class="l">0</b>`).join('');
@@ -768,22 +907,75 @@ $('goDice').onclick = async () => {
 };
 setCube(0, 0, false);
 
+/* ================= АПГРЕЙДЕР ================= */
+const UP_R = 118, UP_C = 2 * Math.PI * UP_R;
+let upX = 2, upRot = 0;
+const upArc = $('upArc'), upNeedle = $('upNeedle');
+function setUpX(v, src) { upX = Math.min(100, Math.max(1.1, Math.round(v * 100) / 100)); updateUpgrade(src); }
+function updateUpgrade(src) {
+  const c = RTP / upX, pct = c * 100;
+  upArc.setAttribute('stroke-dasharray', (c * UP_C).toFixed(2) + ' ' + UP_C.toFixed(2));
+  const pt = pct >= 10 ? String(Math.round(pct * 10) / 10) : pct.toFixed(2);
+  $('upPct').textContent = pt + '%';
+  $('upPct').className = 'upct ' + (pct >= 50 ? 'hi' : pct >= 20 ? 'mid' : 'lo');
+  $('upTier').textContent = pct >= 50 ? 'высокий шанс' : pct >= 20 ? 'средний шанс' : pct >= 5 ? 'низкий шанс' : 'очень рискованно';
+  $('upInfo').innerHTML = 'x' + fx(upX);
+  $('upPrize').textContent = fmt(Math.floor(bet * upX));
+  if (src !== 'input') $('upMul').value = upX;
+  if (src !== 'slide') $('upSlide').value = Math.min(81, Math.max(1, pct));
+  document.querySelectorAll('#upMulChips button').forEach(b => b.classList.toggle('sel', +b.dataset.x === upX));
+  document.querySelectorAll('#upChChips button').forEach(b => b.classList.toggle('sel', Math.abs(+b.dataset.c - pct) < .05));
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.up-chips button'); if (!b) return;
+  if (b.dataset.x) setUpX(+b.dataset.x); else setUpX(RTP / (+b.dataset.c / 100));
+  tick();
+});
+$('upMul').addEventListener('input', e => { const v = parseFloat(e.target.value); if (v >= 1.1) setUpX(v, 'input'); });
+$('upMul').addEventListener('change', e => setUpX(parseFloat(e.target.value) || 2));
+$('upSlide').addEventListener('input', e => { const c = parseFloat(e.target.value) / 100; if (c > 0) setUpX(RTP / c, 'slide'); });
+
+$('goUpgrade').onclick = async () => {
+  if (busy) return;
+  if (S.balance <= 0) return openDeposit();
+  if (!takeBet()) return;
+  const btn = $('goUpgrade'); setBusy(true); btn.disabled = true; btn.querySelector('span').textContent = 'Крутим…';
+  const b = bet, x = upX; let win, srvBal = null;
+  if (REMOTE) {
+    try { const r = await apiCall('/upgrade', { bet: b, x: x }); win = r.win; srvBal = r.balance; }
+    catch (e) { S.balance += b; setBusy(false); btn.disabled = false; render(); toast(e.message, true); return; }
+  } else win = rndFloat() < RTP / x;
+  /* зелёная зона занимает долю RTP/x круга, считая от верхней точки по часовой стрелке */
+  const c = RTP / x, edge = Math.min(.012, c * .12) * 360;
+  const ang = win ? edge + rndFloat() * Math.max(.1, c * 360 - 2 * edge)
+                  : c * 360 + edge + rndFloat() * Math.max(.1, (1 - c) * 360 - 2 * edge);
+  upRot = Math.ceil((upRot + 360 * 5 - ang) / 360) * 360 + ang;
+  say($('rUp'), 'Крутим…'); $('stUp').classList.add('spinning');
+  upNeedle.style.transform = `rotate(${upRot}deg)`;
+  const iv = setInterval(tick, 160);
+  setTimeout(() => {
+    clearInterval(iv); $('stUp').classList.remove('spinning');
+    const r = $('rUp');
+    if (win) {
+      const prize = Math.floor(b * x); settle('upgrade', b, prize, x, srvBal);
+      say(r, `Апгрейд x${fx(x)} · выигрыш +${fmt(prize - b)} ⭐`, 'win'); haptic('success'); confetti($('stUp')); popBalance();
+    } else { settle('upgrade', b, 0, x, srvBal); say(r, `Не вышло · −${fmt(b)} ⭐`, 'lose'); haptic('error'); }
+    setBusy(false); btn.disabled = false; render();
+  }, 4700);
+};
+
 /* ================= ПРОФИЛЬ ================= */
 function renderProfile() {
   $('pBal').textContent = fmt(S.balance);
   $('sDep').textContent = fmt(S.deposited); $('sWd').textContent = fmt(S.withdrawn); $('sWon').textContent = fmt(S.wonTotal);
-  $('wdLeft').textContent = 'Осталось сегодня: ' + fmt(wdLeft()) + ' из ' + fmt(WD_LIMIT);
   const rate = S.played ? Math.round(S.won / S.played * 100) : 0;
-  $('pStats').innerHTML =
-    `<div class="stat"><small>Сыграно</small><div>${fmt(S.played)}</div></div>` +
-    `<div class="stat"><small>Побед</small><div>${fmt(S.won)} <span style="color:var(--muted);font-size:13px;font-weight:600">${rate}%</span></div></div>` +
-    `<div class="stat"><small>Оборот</small><div>⭐ ${fmt(S.wagered)}</div></div>` +
-    `<div class="stat"><small>Лучший выигрыш</small><div>⭐ ${fmt(S.best)}</div></div>`;
+  const lg = (n, v) => `<div class="lg"><span>${n}</span><i></i><b>${v}</b></div>`;
+  $('pStats').innerHTML = lg('Сыграно', fmt(S.played)) + lg('Побед', fmt(S.won) + ' · ' + rate + '%') + lg('Оборот', '⭐ ' + fmt(S.wagered)) + lg('Лучший выигрыш', '⭐ ' + fmt(S.best));
+  $('pOps').innerHTML = S.ops.slice(0, 5).map(opRow).join('') || '<div class="empty">Пока пусто</div>';
 }
 
 /* ---------- старт ---------- */
 ['avTop', 'avBig'].forEach(id => setAvatar($(id)));
-$('nmTop').textContent = NAME; $('unTop').textContent = UNAME || 'Игрок';
 $('nmBig').textContent = NAME; $('unBig').textContent = UNAME;
 $('testbar').hidden = REMOTE;
 setBet(100); setX(2); rebuildWheel(); renderStrip(); render();
