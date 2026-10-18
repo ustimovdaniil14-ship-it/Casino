@@ -14,6 +14,7 @@ from aiogram.fsm.state import State, StatesGroup
 TOKEN = os.environ["BOT_TOKEN"]
 RTP, DEP_MAX, WD_LIMIT = 0.9, 100_000, 50_000
 WIN_CAP = 50_000   # максимальный выигрыш за один раунд
+MAX_BET = 5_000    # максимальная ставка
 def cap_err(): return HTTPException(400, f"Максимальный выигрыш за раунд {WIN_CAP:,} ⭐. Уменьши ставку или множитель".replace(",", " "))
 # Если бот создан не в обычном Telegram, а на своём сервере приватки,
 # задай переменную API_BASE (адрес Bot API приватки, например https://api.example.com)
@@ -214,6 +215,7 @@ def play(uid, bet, payout, x, game):
 async def wheel(request: Request):
     uid = auth(request); j = await request.json(); bet = int(j["bet"]); x = round(float(j["x"]), 2)
     if not 2 <= x <= 100: raise HTTPException(400, "Неверный множитель")
+    if bet > MAX_BET: raise HTTPException(400, "Максимальная ставка 5 000 ⭐")
     if bet * x > WIN_CAP: raise cap_err()
     async with lock:
         if bet < 1 or bet > state(uid)["balance"]: raise HTTPException(400, "Не хватает звёзд")
@@ -224,7 +226,8 @@ async def wheel(request: Request):
 @app.post("/api/upgrade")
 async def upgrade(request: Request):
     uid = auth(request); j = await request.json(); bet = int(j["bet"]); x = round(float(j["x"]), 2)
-    if not 1.2 <= x <= 100: raise HTTPException(400, "Неверный множитель")
+    if not 1.8 <= x <= 100: raise HTTPException(400, "Неверный множитель")
+    if bet > MAX_BET: raise HTTPException(400, "Максимальная ставка 5 000 ⭐")
     if bet * x > WIN_CAP: raise cap_err()
     async with lock:
         if bet < 1 or bet > state(uid)["balance"]: raise HTTPException(400, "Не хватает звёзд")
@@ -236,6 +239,7 @@ async def upgrade(request: Request):
 async def dice(request: Request):
     uid = auth(request); j = await request.json(); bet = int(j["bet"]); pick = j["pick"]
     if pick not in ("even", "odd"): raise HTTPException(400, "Неверный выбор")
+    if bet > MAX_BET: raise HTTPException(400, "Максимальная ставка 5 000 ⭐")
     async with lock:
         if bet < 1 or bet > state(uid)["balance"]: raise HTTPException(400, "Не хватает звёзд")
         n = secrets.randbelow(6) + 1

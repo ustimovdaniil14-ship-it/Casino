@@ -292,16 +292,16 @@ input[type=number]{-moz-appearance:textfield}
     </div>
     <div class="lockable">
       <div class="mulcard">
-        <div><div class="cap">Множитель</div><div class="field"><span class="x">x</span><input id="upMul" type="number" inputmode="decimal" min="1.2" max="100" step="0.1"></div></div>
+        <div><div class="cap">Множитель</div><div class="field"><span class="x">x</span><input id="upMul" type="number" inputmode="decimal" min="1.8" max="100" step="0.1"></div></div>
         <div class="mulside"><div class="info"><span>Выигрыш</span><b>⭐ <span id="upPrize">0</span></b></div></div>
       </div>
       <div class="card" style="margin-top:10px">
         <div class="cap">Шанс на успех</div>
-        <input class="slide" id="upSlide" type="range" min="1" max="75" step="0.5" value="45">
-        <div class="info"><span>1%</span><span>75%</span></div>
+        <input class="slide" id="upSlide" type="range" min="1" max="50" step="0.5" value="45">
+        <div class="info"><span>1%</span><span>50%</span></div>
       </div>
       <div class="chips up-chips" id="upMulChips"><button data-x="2">x2</button><button data-x="5">x5</button><button data-x="10">x10</button><button data-x="50">x50</button><button data-x="100">x100</button></div>
-      <div class="chips up-chips" id="upChChips"><button data-c="25">25%</button><button data-c="50">50%</button><button data-c="75">75%</button></div>
+      <div class="chips up-chips" id="upChChips"><button data-c="25">25%</button><button data-c="50">50%</button></div>
     </div>
     <div class="hint">Стрелка должна остановиться в зелёной зоне.</div>
     <div class="dock">
@@ -349,7 +349,7 @@ input[type=number]{-moz-appearance:textfield}
    API_URL заполнен -> игры, пополнение и вывод идут через твой сервер (см. функции api* ниже). */
 const CFG = { BOT: 'PavelBot', API_URL: '/api' }; // впиши адрес сервера; пустая строка = тестовый режим
 const REMOTE = !!CFG.API_URL;
-const DEP_MAX = 100000, WD_LIMIT = 50000, RTP = 0.9;
+const MAX_BET = 5000, DEP_MAX = 100000, WD_LIMIT = 50000, RTP = 0.9;
 const DEP_CHIPS = [100, 500, 1000, 5000, 10000, 25000, 50000, 100000];
 
 const tg = window.Telegram && window.Telegram.WebApp;
@@ -437,6 +437,7 @@ function setBusy(b) { busy = b; document.body.classList.toggle('busy', b); }
 
 function takeBet() {
   if (!bet || bet < 1) { toast('Введи ставку', true); return false; }
+  if (bet > MAX_BET) { toast('Максимальная ставка 5 000 ⭐', true); return false; }
   if (bet > S.balance) { toast('Не хватает звёзд на такую ставку', true); haptic('error'); return false; }
   S.balance -= bet; save(); render(); return true;
 }
@@ -798,7 +799,7 @@ setCube(0, 0, false);
 const UP_R = 118, UP_C = 2 * Math.PI * UP_R;
 let upX = 2, upRot = 0;
 const upArc = $('upArc'), upNeedle = $('upNeedle');
-function setUpX(v, src) { upX = Math.min(100, Math.max(1.2, Math.round(v * 100) / 100)); updateUpgrade(src); }
+function setUpX(v, src) { upX = Math.min(100, Math.max(1.8, Math.round(v * 100) / 100)); updateUpgrade(src); }
 function updateUpgrade(src) {
   const c = RTP / upX, pct = c * 100;
   upArc.setAttribute('stroke-dasharray', (c * UP_C).toFixed(2) + ' ' + UP_C.toFixed(2));
@@ -809,7 +810,7 @@ function updateUpgrade(src) {
   $('upInfo').innerHTML = 'x' + fx(upX);
   $('upPrize').textContent = fmt(Math.floor(bet * upX));
   if (src !== 'input') $('upMul').value = upX;
-  if (src !== 'slide') $('upSlide').value = Math.min(75, Math.max(1, pct));
+  if (src !== 'slide') $('upSlide').value = Math.min(50, Math.max(1, pct));
   document.querySelectorAll('#upMulChips button').forEach(b => b.classList.toggle('sel', +b.dataset.x === upX));
   document.querySelectorAll('#upChChips button').forEach(b => b.classList.toggle('sel', Math.abs(+b.dataset.c - pct) < .05));
 }
@@ -818,7 +819,7 @@ document.addEventListener('click', e => {
   if (b.dataset.x) setUpX(+b.dataset.x); else setUpX(RTP / (+b.dataset.c / 100));
   tick();
 });
-$('upMul').addEventListener('input', e => { const v = parseFloat(e.target.value); if (v >= 1.2) setUpX(v, 'input'); });
+$('upMul').addEventListener('input', e => { const v = parseFloat(e.target.value); if (v >= 1.8) setUpX(v, 'input'); });
 $('upMul').addEventListener('change', e => setUpX(parseFloat(e.target.value) || 2));
 $('upSlide').addEventListener('input', e => { const c = parseFloat(e.target.value) / 100; if (c > 0) setUpX(RTP / c, 'slide'); });
 
