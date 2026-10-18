@@ -345,7 +345,7 @@ function setAvatar(el) {
 async function apiCall(path, body) {
   const r = await fetch(CFG.API_URL + path, { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json', 'X-Init-Data': (tg && tg.initData) || '' }, body: body ? JSON.stringify(body) : undefined });
   const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(j.error || 'Ошибка сервера');
+  if (!r.ok) throw new Error(j.error || (r.status >= 500 ? 'Сервер сейчас недоступен (' + r.status + '), подожди минуту и открой заново' : 'Ошибка запроса (' + r.status + ')'));
   return j;
 }
 async function syncState() { if (!REMOTE) return; try { const r = await apiCall('/state'); Object.assign(S, r.state); setOnline(r.online); lastDep = S.deposited || 0; render(); } catch (e) { toast('Нет связи: ' + ((e && e.message) || e), true); } }

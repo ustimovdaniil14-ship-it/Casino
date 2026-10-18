@@ -18,7 +18,7 @@ def _env(name, default, cast=float): return cast(os.environ.get(name, default))
 MAX_BET   = _env("MAX_BET", 5000, int)       # максимальная ставка за раунд
 WIN_CAP   = _env("WIN_CAP", 50000, int)      # максимальный выигрыш за раунд (ставка × множитель)
 COOLDOWN  = _env("COOLDOWN", 1.0)            # пауза между ставками одного игрока, сек (против скриптов и параллельных запросов)
-OWNER_ID  = _env("OWNER_ID", 0, int)         # твой id в StaticGram: команды промокодов в боте работают только для него (узнать id: команда /myid)
+OWNER_ID  = int(re.sub(r"\D", "", os.environ.get("OWNER_ID", "")) or 0)         # твой id в StaticGram: команды промокодов в боте работают только для него (узнать id: команда /myid)
 ROLLOVER  = _env("ROLLOVER", 1.0)            # вывод открывается, когда сумма ставок >= внесённое × ROLLOVER
 def fmtn(n): return f"{int(n):,}".replace(",", " ")
 def cap_err(): return HTTPException(400, f"Максимальный выигрыш за раунд {fmtn(WIN_CAP)} ⭐. Уменьши ставку или множитель")
