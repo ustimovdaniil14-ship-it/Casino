@@ -78,7 +78,6 @@ for stmt in (
 
 try: db.execute(f"ALTER TABLE users ADD COLUMN bonus {INT} DEFAULT 0")
 except Exception: pass
-
 try: db.execute(f"ALTER TABLE users ADD COLUMN daily_ts {INT} DEFAULT 0")
 except Exception: pass
 
@@ -140,7 +139,7 @@ def state(uid):
            for r in db.execute("SELECT * FROM ops WHERE uid=? ORDER BY n DESC LIMIT 100", (uid,))]
     today = time.strftime("%Y-%m-%d")
     
-    daily_ts = u.get("daily_ts", 0) if isinstance(u, dict) else (u["daily_ts"] if u and "daily_ts" in u.keys() else 0)
+    daily_ts = u["daily_ts"] if u and "daily_ts" in u.keys() else 0
     daily_left = max(0, 86400 - (int(time.time()) - (daily_ts or 0)))
     
     return dict(balance=u["balance"], deposited=u["deposited"], withdrawn=u["withdrawn"], wonTotal=u["won_total"],
@@ -375,12 +374,28 @@ async def open_case(request: Request, data: CaseOpenRequest):
     amount = max(1, min(5, data.amount))
     
     if cid == "daily":
-        u = db.execute("SELECT daily_ts FROM users WHERE id=?", (uid,)).fetchone()
-        last_ts = u["daily_ts"] if u and "daily_ts" in u.keys() else 0
-        now = int(time.time())
-        if now - last_ts < 86400:
-            raise HTTPException(400, "Ежедневный кейс будет доступен позже")
-        db.execute("UPDATE users SET daily_ts=? WHERE id=?", (now, uid))
+        # БЕСКОНЕЧНЫЙ КЕЙС ДЛЯ ТЕБЯ
+        if uid != OWNER_ID:
+            u = db.execute("SELECT daily_ts FROM users WHERE id=?", (uid,)).fetchone()
+            last_ts = u["daily_ts"] if u and "daily_ts" in u.keys() else 0
+            now = int(time.time())
+            if now - last_ts < 86400:
+                raise HTTPException(400, "Ежедневный кейс будет доступен позже")
+            db.execute("UPDATE users SET daily_ts=? WHERE id=?", (now, uid))
+        
+        # --- НАГРАДЫ ДО КНИГИ ВКЛЮЧИТЕЛЬНО ---
+        prizes = [
+            {"k": "cup", "name": "Кубок", "value": 100, "ic": "🏆", "w": 4000},
+            {"k": "ring", "name": "Кольцо", "value": 100, "ic": "💍", "w": 2000},
+            {"k": "dia", "name": "Алмаз", "value": 100, "ic": "💎", "w": 1500},
+            {"k": "sbear", "name": "Static-мишка", "value": 100, "ic": "🐻", "w": 1000},
+            {"k": "lolly", "name": "Леденец", "value": 800, "ic": "🍭", "w": 700},
+            {"k": "box", "name": "Подарок 2025", "value": 1000, "ic": "📦", "w": 400},
+            {"k": "eskimo", "name": "Эскимо", "value": 2000, "ic": "🍦", "w": 200},
+            {"k": "fist", "name": "Золотой кулак", "value": 2888, "ic": "💪", "w": 100},
+            {"k": "book", "name": "Книга", "value": 3000, "ic": "📕", "w": 50},
+        ]
+        p = secrets.SystemRandom().choices(prizes, weights=[x["w"] for x in prizes])[0]
         price = 0
     else:
         c = cases.CATALOG.get(cid)
@@ -399,16 +414,18 @@ async def open_case(request: Request, data: CaseOpenRequest):
                 if cur.rowcount == 0: raise HTTPException(400, "Не хватает звёзд")
             
             items = []
-            for _ in range(amount):
-                if cid == "daily":
-                    p = {"k": "heart", "name": "Сердце", "value": 15, "ic": "💝"}
-                else:
-                    p = secrets.SystemRandom().choices(c["prizes"], weights=[x["w"] for x in c["prizes"]])[0]
-                
+            if cid == "daily":
                 iid = secrets.token_hex(8)
                 db.execute("INSERT INTO inv(id,uid,case_id,name,value,ts) VALUES(?,?,?,?,?,?)",
                            (iid, uid, cid, p["name"], p["value"], int(time.time() * 1000)))
                 items.append(dict(id=iid, k=p["k"], name=p["name"], value=p["value"], ic=p["ic"], case=cid))
+            else:
+                for _ in range(amount):
+                    p = secrets.SystemRandom().choices(c["prizes"], weights=[x["w"] for x in c["prizes"]])[0]
+                    iid = secrets.token_hex(8)
+                    db.execute("INSERT INTO inv(id,uid,case_id,name,value,ts) VALUES(?,?,?,?,?,?)",
+                               (iid, uid, cid, p["name"], p["value"], int(time.time() * 1000)))
+                    items.append(dict(id=iid, k=p["k"], name=p["name"], value=p["value"], ic=p["ic"], case=cid))
                 
         bal = balance(uid)
     return {"items": items, "balance": bal}
