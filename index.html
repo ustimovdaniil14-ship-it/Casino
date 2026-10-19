@@ -10,7 +10,7 @@
 <style>
 :root{--bg:#0c0d12;--s1:rgba(255,255,255,.045);--s2:rgba(255,255,255,.08);--line:rgba(255,255,255,.09);--line2:rgba(230,200,143,.34);
 --text:#f4efe6;--mute:#9b98a6;--gold:#e6c88f;--gold2:#b88d4f;--ink:#2a1d0a;--win:#57c99b;--lose:#e5707a;--wine:#b0364a;
---ui:"Onest",-apple-system,"Segoe UI",Roboto,sans-serif;--serif:"Cormorant Garamond",Georgia,serif}
+--ui:"Onest",-apple-system,"Segoe UI",Roboto,sans-serif;--serif:"Cormorant Garamond",Georgia,serif;--size:120px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0}
 body{color:var(--text);font-family:var(--ui);min-height:100vh;display:flex;justify-content:center;background:var(--bg);-webkit-font-smoothing:antialiased;font-variant-numeric:lining-nums tabular-nums}
@@ -38,18 +38,82 @@ svg.ic{width:1em;height:1em;flex:none}
 .plus{border:1px solid var(--line2);background:var(--s1);color:var(--gold);border-radius:14px;padding:11px 15px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px}
 .plus .ic{font-size:13px}
 
-.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;margin-bottom:14px;background:var(--s1);border:1px solid var(--line);border-radius:18px}
-.seg button{display:flex;flex-direction:column;gap:3px;padding:9px 0;border:1px solid transparent;border-radius:14px;background:transparent;color:var(--mute);font-weight:600;font-size:11.5px}
-.seg button .ic{font-size:18px}
+.seg{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;padding:4px;margin-bottom:14px;background:var(--s1);border:1px solid var(--line);border-radius:18px}
+.seg button{display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 2px;border:1px solid transparent;border-radius:14px;background:transparent;color:var(--mute);font-weight:600;font-size:14px}
+.seg button .ic{font-size:16px}
 .seg button.on{color:var(--gold);background:rgba(230,200,143,.1);border-color:var(--line2)}
 .testbar{margin:0 0 12px;padding:7px 12px;border-radius:12px;border:1px dashed var(--line2);color:var(--gold);font-size:12px;text-align:center;line-height:1.4}
+.strip{display:flex;gap:6px;justify-content:center;min-height:30px;margin-bottom:10px;overflow:hidden}.strip:empty{display:none}
+.strip b{padding:5px 11px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.strip b.w{background:rgba(230,200,143,.16);color:var(--gold);border:1px solid var(--line2)}.strip b.l{background:var(--s1);color:var(--mute);border:1px solid var(--line)}
+
+.stage{position:relative;overflow:hidden;border-radius:28px;margin-bottom:14px;padding:24px 12px 16px;text-align:center;border:1px solid var(--line);
+ background:radial-gradient(80% 55% at 50% 0%,rgba(230,200,143,.13),transparent 70%),linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));box-shadow:0 30px 60px -34px #000,inset 0 1px 0 rgba(255,255,255,.07)}
+.result{display:inline-block;min-height:34px;margin-top:12px;padding:7px 18px;border-radius:999px;font-size:14px;font-weight:600;background:var(--s1);border:1px solid var(--line);color:var(--mute)}
+.result.win{color:var(--win);background:rgba(87,201,155,.12);border-color:rgba(87,201,155,.4)}
+.result.lose{color:var(--lose);background:rgba(229,112,122,.1);border-color:rgba(229,112,122,.35)}
 
 .cta{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border:0;border-radius:16px;padding:16px;font-size:16px;font-weight:800;color:var(--ink);background:linear-gradient(180deg,#f2dcaa,#c9a064);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 12px 28px -10px rgba(230,200,143,.5)}
 .cta:disabled{opacity:.45}.cta .ic{font-size:17px}
 .ghost{width:100%;margin-top:10px;border:1px solid var(--line2);background:transparent;border-radius:14px;padding:14px;font-size:15px;font-weight:600;color:var(--text)}
 
-.pback{border:0;background:transparent;color:var(--mute);font-size:15px;font-weight:500;padding:2px 0 12px;display:flex;align-items:center;gap:6px}
-.pback .ic{font-size:14px;transform:rotate(180deg)}
+.card,.mulcard{background:var(--s1);border:1px solid var(--line);border-radius:18px;padding:13px 15px}
+.mulcard{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.cap{color:var(--mute);font-size:13px;font-weight:500;margin-bottom:4px}
+.field{display:flex;align-items:center;gap:4px}
+.field .x{font-family:var(--serif);font-size:30px;font-weight:700;color:var(--gold)}
+.field input{width:96px;min-width:0;background:transparent;border:0;outline:none;color:var(--text);font-family:var(--serif);font-size:32px;font-weight:700;padding:0}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+.mulside{text-align:right;min-width:0}
+.info{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--mute);margin-top:4px}
+.mulside .info{justify-content:flex-end;margin:0 0 4px}.info b{color:var(--text);font-weight:700}
+.chips{display:flex;gap:8px;margin-top:10px;overflow-x:auto;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chips button{flex:1 0 auto;min-width:54px;background:var(--s1);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;font-weight:700;color:var(--mute)}
+.chips button.sel{color:var(--gold);background:rgba(230,200,143,.1);border-color:var(--line2)}
+.hint{color:var(--mute);font-size:13px;text-align:center;margin-top:14px;line-height:1.45}
+
+.wheel-wrap{position:relative;width:310px;height:310px;margin:4px auto 2px;filter:drop-shadow(0 18px 24px rgba(0,0,0,.5))}
+.ring{position:absolute;inset:-4px;border-radius:50%;z-index:1;pointer-events:none;background:conic-gradient(from 30deg,#f6e4b8,#a67b3f,#f6e4b8,#a67b3f,#f6e4b8);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 13px),#000 calc(100% - 12px));mask:radial-gradient(farthest-side,transparent calc(100% - 13px),#000 calc(100% - 12px))}
+#leds{display:none}
+.wheelbox{position:absolute;inset:11px;border-radius:50%;overflow:hidden;background:#101117}
+.wheelbox canvas{width:100%;height:100%;display:block;transition:transform 2.7s cubic-bezier(.1,.62,.08,1);will-change:transform}
+.pin{position:absolute;top:-14px;left:50%;width:34px;height:44px;margin-left:-17px;z-index:5;transform-origin:50% 14px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
+.pin svg{width:100%;height:100%}
+.spinning .pin{animation:pinTick .16s infinite alternate}
+@keyframes pinTick{from{transform:rotate(-7deg)}to{transform:rotate(5deg)}}
+.hub{position:absolute;top:50%;left:50%;width:66px;height:66px;margin:-33px 0 0 -33px;border-radius:50%;z-index:4;display:grid;place-items:center;font-size:27px;background:radial-gradient(#23242d,#0e0f14);border:2px solid var(--gold)}
+
+.ugauge{position:relative;width:280px;height:280px;margin:0 auto}
+.ugauge svg.ring2{position:absolute;inset:0;width:100%;height:100%}
+.upcenter{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.upct{font-family:var(--serif);font-weight:700;font-size:58px;line-height:.95}
+.upct.hi{color:var(--win)}.upct.mid{color:var(--gold)}.upct.lo{color:var(--lose)}
+.uptier{font-size:14px;font-weight:500;color:var(--mute);margin-top:4px}
+.upmul{margin-top:6px;font-weight:700;font-size:14px;color:var(--mute)}.upmul b{color:var(--text)}
+.needle{position:absolute;inset:0;pointer-events:none;z-index:2}
+.ugauge svg.ring2{transform-origin:50% 50%;transition:transform 2.5s cubic-bezier(.1,.62,.08,1);will-change:transform}
+.needle::before{content:"";position:absolute;top:-5px;left:50%;margin-left:-9px;border-left:9px solid transparent;border-right:9px solid transparent;border-top:22px solid var(--text);filter:drop-shadow(0 3px 3px rgba(0,0,0,.5))}
+.slide{width:100%;margin:12px 0 2px;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:var(--s2);outline:none}
+.slide::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:linear-gradient(180deg,#f2dcaa,#c9a064);border:3px solid var(--bg)}
+.slide::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--gold);border:3px solid var(--bg)}
+.up-chips button{min-width:48px;padding:10px 8px}
+
+.picks{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pick{background:var(--s1);border:1px solid var(--line);border-radius:18px;padding:15px 8px;text-align:center;font-family:var(--serif);font-size:26px;font-weight:700;line-height:1.1}
+.pick small{display:block;color:var(--mute);font-family:var(--ui);font-weight:500;font-size:13px;margin-top:3px}
+.pick.sel{background:rgba(230,200,143,.1);border-color:var(--line2);color:var(--gold)}
+
+.dock{position:fixed;z-index:20;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:440px;padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:rgba(14,15,21,.82);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-top:1px solid var(--line2);border-radius:26px 26px 0 0}
+.dock-bet{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.betbox{flex:1 1 36%;min-width:0;display:flex;align-items:center;gap:7px;background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:8px 12px}
+.betbox:focus-within{border-color:var(--line2)}.betbox .ic{font-size:18px}
+.betbox input{width:100%;min-width:0;background:transparent;border:0;outline:none;color:var(--text);font-family:var(--serif);font-size:26px;font-weight:700;padding:0}
+.quick{display:flex;gap:6px}
+.quick button{display:inline-flex;align-items:center;gap:4px;padding:12px 11px;border-radius:12px;border:1px solid var(--line);background:var(--s1);font-weight:700;font-size:13px;color:var(--mute)}
+.quick button .ic{font-size:12px}.quick button.sel{color:var(--gold);border-color:var(--line2);background:rgba(230,200,143,.1)}
+
+.pback{border:0;background:transparent;color:var(--mute);font-size:15px;font-weight:500;padding:2px 0 12px;display:flex;align-items:center;gap:6px}.pback .ic{font-size:14px;transform:rotate(180deg)}
 .pass{display:flex;align-items:center;gap:14px;margin-bottom:14px}
 .pass .avatar{width:64px;height:64px;font-size:32px}
 .pass .pn{font-family:var(--serif);font-size:28px;font-weight:700;line-height:1}
@@ -98,10 +162,12 @@ svg.ic{width:1em;height:1em;flex:none}
 @keyframes fly{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--rot))}}
 .toast{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-140%);z-index:80;padding:11px 18px;border-radius:14px;font-size:14px;font-weight:600;background:#1d1e27;border:1px solid var(--line2);box-shadow:0 12px 30px rgba(0,0,0,.5);transition:transform .32s cubic-bezier(.2,.9,.3,1.2);max-width:90%;text-align:center}
 .toast.show{transform:translate(-50%,0)}.toast.err{border-color:rgba(229,112,122,.55);color:#f3b4ba}
+.seg{grid-template-columns:repeat(2,1fr)}.seg button{gap:5px;font-size:13px;padding:11px 0}.seg button .ic{font-size:15px}
 .online{margin-left:8px;color:var(--win)}.online i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--win);margin-right:4px;vertical-align:1px}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
 
+.seg{grid-template-columns:repeat(3,1fr)}
 body[data-view="cases"] .app{padding-bottom:calc(30px + env(safe-area-inset-bottom))}
 .cs-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
 .cs-card{background:var(--s1);border:1px solid var(--line);border-radius:20px;padding:16px 12px 12px;text-align:center}
@@ -119,6 +185,9 @@ body[data-view="cases"] .app{padding-bottom:calc(30px + env(safe-area-inset-bott
 .cs-sell .pbtn{padding:8px 12px;font-size:13px}
 #v-wheel{display:none!important}
 
+.seg{grid-template-columns:repeat(4,1fr)}
+.seg button{flex-direction:column;gap:3px;padding:9px 0;font-size:11.5px}
+.seg button .ic{font-size:18px}
 .pback{display:none}
 body[data-view="cases"] .app,body[data-view="inv"] .app{padding-bottom:calc(30px + env(safe-area-inset-bottom))}
 .cs-head{margin:2px 2px 14px}
@@ -366,6 +435,7 @@ const pad = n => String(n).padStart(2, '0');
 function fdate(ts, sec) { const d = new Date(ts); return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}` + (sec ? ':' + pad(d.getSeconds()) : ''); }
 function rid() { const a = new Uint8Array(18); crypto.getRandomValues(a); return 'st' + Array.from(a, b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join(''); }
 
+/* ---------- состояние ---------- */
 function load() {
   const base = { balance: 0, deposited: 0, withdrawn: 0, wonTotal: 0, played: 0, won: 0, wagered: 0, best: 0, ops: [], wh: [], wd: { d: '', u: 0 }, daily_left: 0 };
   try { const s = JSON.parse(localStorage.getItem('hub_state_v2')); if (s && typeof s.balance === 'number') return Object.assign(base, s); } catch (e) {}
@@ -384,6 +454,7 @@ function setAvatar(el) {
   else el.textContent = NAME[0].toUpperCase();
 }
 
+/* ---------- сервер (используется только если задан API_URL) ---------- */
 async function apiCall(path, body) {
   const r = await fetch(CFG.API_URL + path, { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json', 'X-Init-Data': (tg && tg.initData) || '' }, body: body ? JSON.stringify(body) : undefined });
   const j = await r.json().catch(() => ({}));
@@ -392,6 +463,7 @@ async function apiCall(path, body) {
 }
 async function syncState() { if (!REMOTE) return; try { const r = await apiCall('/state'); Object.assign(S, r.state); setOnline(r.online); lastDep = S.deposited || 0; render(); } catch (e) { toast('Нет связи: ' + ((e && e.message) || e), true); } }
 
+/* ---------- утилиты ---------- */
 function rndInt(n) { const a = new Uint32Array(1), lim = Math.floor(4294967296 / n) * n; do { crypto.getRandomValues(a); } while (a[0] >= lim); return a[0] % n; }
 function rndFloat() { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] / 4294967296; }
 function haptic(t) { try { tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred(t); } catch (e) {} }
@@ -411,6 +483,7 @@ function confetti(box) {
   }
 }
 
+/* ---------- баланс и отрисовка ---------- */
 let shown = S.balance, tw = null, bet = 100, busy = false, view = 'cases', xVal = 2;
 function setBal(v) { document.querySelectorAll('.balv').forEach(e => e.textContent = fmt(v)); }
 function renderBalance() {
@@ -437,6 +510,7 @@ function takeBet() {
   if (bet > S.balance) { toast('Не хватает звёзд на такую ставку', true); haptic('error'); return false; }
   S.balance -= bet; save(); render(); return true;
 }
+/* итог раунда; srvBal — итоговый баланс от сервера */
 function settle(game, b, payout, x, srvBal) {
   S.played++; S.wagered += b;
   if (payout > 0) S.wonTotal += payout;
@@ -446,6 +520,7 @@ function settle(game, b, payout, x, srvBal) {
   save(); render();
 }
 
+/* ---------- ставка ---------- */
 function setBet(v, src) {
   bet = Math.max(1, Math.floor(v) || 1);
   document.querySelectorAll('.bet-input').forEach(i => { if (i !== src) i.value = bet; });
@@ -464,6 +539,7 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => { if (e.target.id === 'xInput') setX(parseFloat(e.target.value) || 2); });
 
+/* ---------- навигация ---------- */
 function setView(v) {
   view = v; document.body.dataset.view = v;
   document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
@@ -475,11 +551,13 @@ function setView(v) {
 }
 document.querySelectorAll('#nav button').forEach(b => b.onclick = () => setView(b.dataset.v));
 
+/* ================= ШТОРКИ ================= */
 const sheetBack = $('sheetBack'), sheet = $('sheet'), sheetBody = $('sheetBody');
 function openSheet(html) { sheetBody.innerHTML = html; sheetBack.classList.add('on'); sheet.classList.add('on'); sheet.scrollTop = 0; }
 function closeSheet() { sheetBack.classList.remove('on'); sheet.classList.remove('on'); }
 sheetBack.onclick = () => { if (!csBusy) closeSheet(); };
 
+/* общий экран ввода суммы */
 function amountSheet(o) {
   openSheet(
     `<div class="sh-title">${o.title}</div>` +
@@ -502,6 +580,7 @@ function amountSheet(o) {
   setTimeout(() => { try { inp.focus(); } catch (e) {} }, 380);
 }
 
+/* ---- пополнение ---- */
 function openDeposit() {
   amountSheet({ title: 'Пополнение', label: 'Сумма пополнения', limitText: 'макс. ' + fmt(DEP_MAX), max: DEP_MAX, button: 'Пополнить', onGo: startDeposit, custom: customDeposit });
 }
@@ -517,7 +596,9 @@ async function depositViaChat(a) {
     setTimeout(() => { try { tg.close(); } catch (e) {} }, 900);
   } catch (e) { toast(e.message, true); openDeposit(); }
 }
+/* ---------- ожидание зачисления ---------- */
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+/* тихо обновляет состояние; возвращает, на сколько выросло пополнение (-1 при ошибке связи) */
 async function pullState() {
   try {
     const r = await apiCall('/state'), prev = lastDep;
@@ -596,6 +677,7 @@ function openReceipt(op, title) {
   $('rOk').onclick = closeSheet;
 }
 
+/* ---- вывод ---- */
 function openWithdraw() {
   if (S.balance <= 0) return toast('На балансе нет звёзд', true);
   const left = wdLeft();
@@ -615,7 +697,8 @@ async function startWithdraw(a) {
   openReceipt(op, 'Вывод оформлен');
 }
 
-const DEMO_PROMOS = { DEMO500: 500, START: 100 };
+/* ---- промокод ---- */
+const DEMO_PROMOS = { DEMO500: 500, START: 100 };   // только для демо-версии; на сервере коды создаёт владелец командой бота
 function openPromo() {
   openSheet(
     `<div class="sh-icon"><svg class="ic"><use href="#i-gift"/></svg></div><div class="sh-title">Промокод</div>` +
@@ -648,6 +731,7 @@ async function activatePromo(raw) {
   } catch (e) { toast(e.message, true); if (go) go.disabled = false; }
 }
 
+/* ---- история операций ---- */
 function opRow(o) {
     let icon, cls, title, sub = fdate(o.ts), amt, ac;
     if (o.k === 'promo') { icon = 'i-gift'; cls = 'promo'; title = 'Промокод ' + (o.g || ''); amt = '+' + fmt(o.a); ac = 'w'; }
@@ -673,233 +757,108 @@ $('wWd').onclick = openWithdraw;
 $('wOps').onclick = openOps;
 $('wPromo').onclick = openPromo;
 
-/* ================= КЕЙСЫ ================= */
-const THEME = {
-  start: ['#e8b98c', '#8a5a35', 'rgba(232,185,140,.22)'], silver: ['#eef2f8', '#7f8aa0', 'rgba(205,218,238,.2)'],
-  gold: ['#f8e6b8', '#b88d4f', 'rgba(230,200,143,.27)'], diamond: ['#b4f1fb', '#2f8ea3', 'rgba(110,222,242,.22)'], legend: ['#f4b0ec', '#8a3fae', 'rgba(210,120,232,.27)'],
-  platinum: ['#e2eaff', '#5a6fb5', 'rgba(150,178,255,.25)'], emperor: ['#ffd49a', '#a8322f', 'rgba(255,140,95,.27)'],
-  magnate: ['#c9f7d8', '#2f8a5c', 'rgba(110,222,160,.24)'], king: ['#fff0b8', '#c9820f', 'rgba(255,205,90,.34)']
-};
-const rar = v => v >= 6000 ? '#e6c88f' : v >= 2500 ? '#b48cf2' : v >= 700 ? '#6aa7e8' : v >= 90 ? '#57c99b' : '#9b98a6';
-const csPct = p => (p * 100).toFixed(p < .1 ? 1 : 0) + '%';
-const spark = (x, y, d) => `<path class="sp" style="animation-delay:${d}s" d="M${x} ${y - 5}l1.6 3.4 3.4 1.6-3.4 1.6-1.6 3.4-1.6-3.4-3.4-1.6 3.4-1.6z" fill="var(--c1)"/>`;
-function csArt(id) {
-  return `<svg class="cs-svg" viewBox="0 0 120 112"><defs><linearGradient id="gb${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--c1)"/><stop offset="1" style="stop-color:var(--c2)"/></linearGradient></defs>` +
-    `<ellipse cx="60" cy="104" rx="40" ry="6" fill="rgba(0,0,0,.35)"/><rect x="22" y="54" width="76" height="46" rx="8" fill="url(#gb${id})"/><rect x="60" y="54" width="38" height="46" rx="8" fill="rgba(0,0,0,.16)"/>` +
-    `<rect x="15" y="40" width="90" height="20" rx="7" fill="var(--c1)"/><rect x="15" y="52" width="90" height="8" rx="4" fill="rgba(0,0,0,.14)"/><rect x="53" y="40" width="14" height="60" fill="#f4efe6" opacity=".93"/>` +
-    `<path d="M60 40C38 12 12 30 44 40z" fill="#f4efe6"/><path d="M60 40C82 12 108 30 76 40z" fill="#e9dfcc"/><circle cx="60" cy="38" r="6.5" fill="#d9cdb6"/>` +
-    `<use href="#i-star" x="46" y="68" width="28" height="28"/><path d="M27 62h18" stroke="rgba(255,255,255,.4)" stroke-width="2.4" stroke-linecap="round"/>` +
-    spark(104, 30, 0) + spark(14, 24, .7) + spark(98, 76, 1.4) + `</svg>`;
-}
-async function csLoad() {
-  if (CS) return true;
-  try { const rr = await apiCall('/cases'); CS = rr.cases; GL = rr.gifts || []; CS.forEach(c => c.prizes.forEach(p => { ICN[p.name] = p.ic; KEYOF[p.name] = p.k; })); return true; }
-  catch (e) { toast(e.message, true); return false; }
-}
-async function casesEnter() {
-  if (!REMOTE) { $('csCases').innerHTML = '<div class="hint" style="grid-column:1/-1">Кейсы работают только при подключённом сервере.</div>'; return; }
-  if (!(await csLoad())) return;
-  
-  let dailyHtml = '';
-  if (S.daily_left && S.daily_left > 0) {
-    dailyHtml = `<div class="cs-card" data-c="daily" style="--c1:#f8e6b8;--c2:#b88d4f;--g:rgba(230,200,143,.3);background:linear-gradient(135deg, rgba(230,200,143,.15), rgba(0,0,0,0)), var(--s1); border-color: var(--gold); grid-column: 1/-1;">
-      <div class="cs-art" style="height:80px;margin-bottom:8px">
-        <svg class="cs-svg" viewBox="0 0 100 100" style="width:70px"><use href="#i-gift" style="color:var(--gold)"/></svg>
-      </div>
-      <b style="color:var(--gold)">Ежедневный 🎁</b>
-      <div class="cs-up">Бесплатно раз в 24 часа</div>
-      <button class="cta" style="background:linear-gradient(180deg,#e6c88f,#b88d4f)">Забрать</button>
-    </div>`;
+/* ================= КОЛЕСО ================= */
+/*LAYOUT*/
+function layoutFor(x) {
+  const p = RTP / x; let best = null;
+  for (let N = 24; N <= 120; N++) {
+    let k = Math.round(N * p); k = Math.min(N - 1, Math.max(1, k));
+    const err = Math.abs(k / N - p);
+    if (!best || err < best.err - 1e-9) best = { N: N, k: k, err: err };
+    if (err < 0.003) { best = { N: N, k: k, err: err }; break; }
   }
-
-  $('csCases').innerHTML = dailyHtml + CS.map((c, i) => { const t = THEME[c.id] || THEME.gold;
-    return `<div class="cs-card" data-c="${c.id}" style="--c1:${t[0]};--c2:${t[1]};--g:${t[2]};animation-delay:${i * 70}ms"><div class="cs-art">${csArt(c.id)}</div><b>${c.name}</b><div class="cs-up">до ⭐ ${fmt(Math.max(...c.prizes.map(p => p.value)))}</div><button class="cta"><svg class="ic"><use href="#i-star"/></svg>${fmt(c.price)}</button></div>`; }).join('');
-  
-  $('csCases').querySelectorAll('.cs-card').forEach(el => el.onclick = () => { tick(); csOpen(el.dataset.c); });
+  const N = best.N, k = best.k, mask = new Array(N).fill(false);
+  for (let j = 0; j < k; j++) mask[Math.floor((j + .5) * N / k)] = true;
+  const win = [], lose = [];
+  mask.forEach((m, i) => (m ? win : lose).push(i));
+  return { N: N, mask: mask, win: win, lose: lose };
 }
+/*END*/
 
-const GIFTS = {};
-const SFX = (() => {
-  let ctx = null, on = true; try { on = localStorage.getItem('sfx') !== '0'; } catch (e) {}
-  const init = () => { try { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); } catch (e) { ctx = null; } };
-  const tone = (f, d, type, g, t0, to) => { if (!on || !ctx) return; try { const t = ctx.currentTime + (t0 || 0), o = ctx.createOscillator(), v = ctx.createGain(); o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); if (to) o.frequency.exponentialRampToValueAtTime(to, t + d); v.gain.setValueAtTime(g || .1, t); v.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(v); v.connect(ctx.destination); o.start(t); o.stop(t + d + .03); } catch (e) {} };
-  return {
-    init, get on() { return on; },
-    toggle() { on = !on; try { localStorage.setItem('sfx', on ? '1' : '0'); } catch (e) {} init(); if (on) this.tick(); return on; },
-    tick() { tone(1250, .03, 'square', .05); tone(620, .05, 'triangle', .07); },
-    win(v) { const n = v >= 6000 ? [523, 659, 784, 1047, 1319] : v >= 700 ? [523, 659, 784, 1047] : [523, 659, 784]; n.forEach((f, i) => { tone(f, .32, 'triangle', .13, i * .09); tone(f * 2, .25, 'sine', .04, i * .09); }); },
-    lose() { tone(330, .38, 'sawtooth', .07, 0, 150); },
-  };
+let WH = null, wheelRot = 0, layoutRaf = 0;
+const wheelEl = $('wheel');
+
+(function buildLeds() {
+  const box = $('leds'), n = 40, r = 155 + 4;
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('i'); d.className = 'led';
+    const t = `rotate(${i * 360 / n}deg) translateY(-${r - 6}px)`;
+    d.style.setProperty('--t', t); d.style.transform = t; d.style.animationDelay = (i * 0.045) + 's';
+    box.appendChild(d);
+  }
 })();
-const sndIcon = () => SFX.on ? '🔊' : '🔇';
 
-const KEYOF = {};
-const ICN = {};
-const gi = name => { const u = GIFTS[KEYOF[name]]; return u ? `<img class="gimg" src="${u}" alt="">` : `<span class="gi-e">${ICN[name] || '🎁'}</span>`; };
-const csp = $('csp');
-let csAmount = 1;
-
-function updateCsButtons() {
-  const btns = document.querySelectorAll('.cs-amt-btn');
-  btns.forEach(b => b.classList.toggle('sel', +b.dataset.a === csAmount));
-}
-
-function renderCsPrice(c) {
-  const price = c.price * csAmount;
-  const btn = $('cspGo');
-  if (btn) btn.querySelector('span').textContent = `Открыть за ${fmt(price)}`;
-}
-
-function csOpen(id) {
-  const c = CS.find(x => x.id === id);
-  let t = THEME[c.id] || THEME.gold;
-  if (id === 'daily') t = ['#f8e6b8', '#b88d4f', 'rgba(230,200,143,.3)'];
-  
-  csp.style.setProperty('--g', t[2]);
-  $('cspIn').innerHTML = `<div class="csp-top"><button class="csp-back" id="cspBack"><svg class="ic"><use href="#i-chev"/></svg></button><div class="csp-title">${c.name}</div><button class="csp-back" id="cspSnd" style="font-size:17px">${sndIcon()}</button><div class="csp-bal">⭐ <span id="cspBal">${fmt(S.balance)}</span></div></div>` +
-    `<div class="csp-stage" id="cspStage" style="--c1:${t[0]};--c2:${t[1]};--g:${t[2]}">${csArt('p' + c.id)}<div class="csp-sub">Шансы открыты · возврат около ${Math.round((c.rtp||0.86) * 100)}%</div></div>` +
-    `<div id="cspRes"></div>` +
-    `<div class="csp-h">Что может выпасть<small>${c.prizes.length} подарков</small></div><div class="csp-grid">` +
-    c.prizes.slice().sort((a, b) => b.value - a.value).map((p, i) => `<div class="pz" style="--r:${rar(p.value)};animation-delay:${Math.min(i, 12) * 30}ms"><div class="im">${gi(p.name)}</div><div class="pill">⭐ ${fmt(p.value)}</div><small>шанс ${csPct(p.p)}</small></div>`).join('') + `</div>`;
-  
-  $('cspBar').innerHTML = `
-    <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px; overflow-x:auto; padding-bottom:4px;" class="cs-amt-row">
-      <div style="color:var(--mute);font-size:13px;font-weight:600;flex:none">Кол-во:</div>
-      ${[1,2,3,4,5].map(n => `<button class="pbtn cs-amt-btn" data-a="${n}" style="padding:8px 14px;flex:none;border-color:var(--line);background:var(--s1)">x${n}</button>`).join('')}
-    </div>
-    <div style="display:flex; gap:10px;">
-      <button class="cta" id="cspGo" style="flex:1"><svg class="ic"><use href="#i-star"/></svg><span>Открыть за ${fmt(c.price)}</span></button>
-      <button class="pbtn" id="cspInstant" style="padding:0 16px;border-color:var(--line2);color:var(--gold)">⚡</button>
-    </div>
-  `;
-  
-  csAmount = 1;
-  updateCsButtons();
-  document.querySelectorAll('.cs-amt-btn').forEach(b => b.onclick = () => {
-    csAmount = +b.dataset.a;
-    updateCsButtons();
-    renderCsPrice(c);
-    tick();
-  });
-  
-  $('cspInstant').onclick = () => csSpin(c, true);
-  $('cspGo').onclick = () => csSpin(c, false);
-  $('cspBack').onclick = () => { if (csBusy) return; csp.classList.remove('on'); };
-  $('cspSnd').onclick = () => { SFX.toggle(); $('cspSnd').textContent = sndIcon(); };
-  csp.scrollTop = 0; csp.classList.add('on');
-}
-
-const csPick = c => { let r = Math.random(), a = 0; for (const p of c.prizes) { a += p.p; if (r < a) return p; } return c.prizes[0]; };
-
-async function csSpin(c, instant = false) {
-  if (csBusy) return;
-  SFX.init();
-  const totalPrice = c.price * csAmount;
-  if (S.balance < totalPrice) { haptic('error'); return toast('Не хватает звёзд, пополни баланс', true); }
-  
-  csBusy = true; 
-  $('cspGo').disabled = true; 
-  const instantBtn = $('cspInstant');
-  if (instantBtn) instantBtn.disabled = true;
-  
-  $('cspRes').innerHTML = ''; 
-  csp.scrollTo({ top: 0, behavior: 'smooth' });
-  
-  let r;
-  try { 
-    r = await apiCall('/cases/open', { case: c.id, amount: csAmount, instant: instant }); 
-  } catch (e) { 
-    csBusy = false; 
-    $('cspGo').disabled = false; 
-    if (instantBtn) instantBtn.disabled = false;
-    return toast(e.message, true); 
+function drawWheel() {
+  const cv = wheelEl, c = cv.getContext('2d'), W = cv.width, cx = W / 2, R = W / 2;
+  c.clearRect(0, 0, W, W);
+  const N = WH.N, step = 2 * Math.PI / N;
+  for (let i = 0; i < N; i++) {
+    const a0 = -Math.PI / 2 + i * step, a1 = a0 + step, win = WH.mask[i];
+    c.beginPath(); c.moveTo(cx, cx); c.arc(cx, cx, R, a0, a1); c.closePath();
+    c.fillStyle = win ? '#e6c88f' : (i % 2 ? '#14151c' : '#1c1d27');
+    c.fill(); c.strokeStyle = 'rgba(255,255,255,.07)'; c.lineWidth = 2; c.lineJoin = 'round'; c.stroke();
+    const arc = .72 * R * step;
+    c.save(); c.translate(cx, cx); c.rotate((a0 + a1) / 2); c.translate(R * .74, 0);
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    if (win) {
+      const size = Math.min(34, arc * .8);
+      if (size >= 9) { c.fillStyle = '#2a1d0a'; c.font = `800 ${size}px Onest, sans-serif`; c.fillText('x' + fx(xVal), 0, 0); }
+    } else if (arc > 16) { c.fillStyle = 'rgba(255,255,255,.13)'; c.font = `700 ${Math.min(24, arc * .6)}px Onest, sans-serif`; c.fillText('✕', 0, 0); }
+    c.restore();
   }
-
-  if (instant) {
-    csBusy = false; $('cspGo').disabled = false; if (instantBtn) instantBtn.disabled = false;
-    S.balance = r.balance; render(); popBalance(); haptic('success'); 
-    SFX.win(r.items.reduce((a, i) => a + i.value, 0));
-    
-    let html = '<div class="cs-grid" style="margin-top:14px; grid-template-columns: 1fr 1fr;">';
-    r.items.forEach(it => {
-      html += `<div class="cs-win" style="--r:${rar(it.value)};margin:0; padding:10px; background:var(--s1); border-radius:16px; border:1px solid var(--line)"><div class="cs-wi" style="width:70px;height:70px;margin-bottom:6px">${gi(it.name)}</div><div class="cs-wn" style="font-size:14px;margin-top:4px">${it.name}</div><div class="cs-wv" style="font-size:13px">⭐ ${fmt(it.value)}</div></div>`;
-    });
-    html += '</div>';
-    
-    const total = r.items.reduce((a, i) => a + i.value, 0);
-    html += `<button class="cta" id="csSellAll" style="margin-top:14px">Продать всё за ${fmt(total)} ⭐</button>`;
-    html += `<button class="pbtn" id="csKeepAll" style="width:100%;margin-top:10px">Оставить в инвентаре</button>`;
-    $('cspRes').innerHTML = html;
-    
-    $('csSellAll').onclick = () => csSellIds(r.items.map(i => i.id), true);
-    $('csKeepAll').onclick = () => { $('cspRes').innerHTML = '<div class="csp-note">Подарки лежат в инвентаре</div>'; };
-    $('cspBal').textContent = fmt(S.balance);
-    return;
-  }
-
-  const W = 116, WIN = 38, cells = [];
-  const singleItem = r.items[0];
-  for (let i = 0; i < 46; i++) cells.push(i === WIN ? c.prizes.find(p => p.name === singleItem.name) : csPick(c));
-  
-  $('cspStage').innerHTML = `<div class="cs-reel"><div class="cs-strip" id="csStrip">` +
-    cells.map(p => `<div class="cs-cell" style="--r:${rar(p.value)}"><div class="im">${gi(p.name)}</div><span>⭐ ${fmt(p.value)}</span></div>`).join('') + `</div></div>`;
-    
-  const st = $('csStrip'), vw = st.parentElement.clientWidth, off = (Math.random() - .5) * 60;
-  const iv = setInterval(tick, 180); let done = false, lastIdx = -1;
-  
-  const loop = () => { if (done) return; try { const m = new DOMMatrix(getComputedStyle(st).transform), idx = Math.floor((-m.m41 + vw / 2) / W); if (idx !== lastIdx) { if (lastIdx >= 0) SFX.tick(); lastIdx = idx; } } catch (e) {} requestAnimationFrame(loop); };
-  
-  const finish = () => {
-    if (done) return; done = true;
-    clearInterval(iv); csBusy = false; $('cspGo').disabled = false; if (instantBtn) instantBtn.disabled = false;
-    S.balance = r.balance; render(); popBalance(); haptic('success'); SFX.win(singleItem.value); $('cspBal').textContent = fmt(S.balance);
-    
-    $('cspRes').innerHTML = `<div class="cs-win" style="--r:${rar(singleItem.value)}"><div class="cs-wi">${gi(singleItem.name)}</div><div class="cs-wn">${singleItem.name}</div><div class="cs-wv">⭐ ${fmt(singleItem.value)}</div></div>` +
-      `<button class="cta" id="csSell" style="margin-top:10px">Продать за ${fmt(singleItem.value)} ⭐</button><button class="pbtn" id="csKeep" style="width:100%;margin-top:10px">Оставить в инвентаре</button>`;
-    $('csSell').onclick = () => csSellIds([singleItem.id], true);
-    $('csKeep').onclick = () => { $('cspRes').innerHTML = '<div class="csp-note">Подарок лежит в инвентаре</div>'; };
-  };
-  
-  requestAnimationFrame(() => requestAnimationFrame(() => { st.style.transition = 'transform 5s cubic-bezier(.12,.6,.1,1)'; st.style.transform = `translateX(${-(WIN * W + W / 2 - vw / 2 + off)}px)`; }));
-  requestAnimationFrame(loop); st.addEventListener('transitionend', finish, { once: true }); setTimeout(finish, 5600);
+}
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { try { drawWheel(); } catch (e) {} });
+function rebuildWheel() {
+  WH = layoutFor(xVal);
+  wheelEl.style.transition = 'none';
+  wheelRot = ((wheelRot % 360) + 360) % 360;
+  wheelEl.style.transform = `rotate(${wheelRot}deg)`;
+  drawWheel(); void wheelEl.offsetWidth; wheelEl.style.transition = '';
+}
+function setX(v, fromInput) {
+  xVal = Math.min(100, Math.max(2, Math.round(v * 100) / 100));
+  if (!fromInput) $('xInput').value = xVal;
+  document.querySelectorAll('.x-chips button').forEach(b => b.classList.toggle('sel', +b.dataset.x === xVal));
+  updatePrize();
+  cancelAnimationFrame(layoutRaf); layoutRaf = requestAnimationFrame(() => { if (!busy) rebuildWheel(); });
+}
+function updatePrize() {
+  const pct = RTP / xVal * 100;
+  $('chance').textContent = (pct >= 10 ? Math.round(pct) : pct.toFixed(1)) + '%';
+  $('prize').textContent = fmt(bet * xVal);
+  updateUpgrade();
+}
+function renderStrip() {
+  $('whStrip').innerHTML = S.wh.slice(0, 7).map(h => h.w ? `<b class="w">x${fx(h.x)}</b>` : `<b class="l">0</b>`).join('');
 }
 
-async function csSellIds(ids, close) {
-  try {
-    const r = await apiCall('/inventory/sell', { ids: ids });
-    S.balance = r.balance; render(); popBalance(); toast('Продано: +' + fmt(r.sold) + ' ⭐');
-    if (close && $('cspRes')) { $('cspRes').innerHTML = '<div class="csp-note">Продано, звёзды на балансе</div>'; $('cspBal').textContent = fmt(S.balance); } 
-    if (view === 'inv') invEnter();
-  } catch (e) { toast(e.message, true); }
-}
-async function invEnter() {
-  if (!REMOTE) { $('invList').innerHTML = '<div class="hint" style="grid-column:1/-1">Инвентарь работает только при подключённом сервере.</div>'; return; }
-  if (!(await csLoad())) return;
-  let r; try { r = await apiCall('/inventory'); } catch (e) { return toast(e.message, true); }
-  S.balance = r.balance; render(); const tot = r.items.reduce((a, i) => a + i.value, 0);
-  $('invSum').textContent = r.items.length ? `${r.items.length} шт. на ⭐ ${fmt(tot)}` : 'Пока пусто';
-  $('invList').innerHTML = r.items.length ? r.items.map((i, k) => `<div class="inv-it" style="--r:${rar(i.value)};animation-delay:${Math.min(k, 12) * 30}ms"><div class="im">${gi(i.name)}</div><b>${i.name}</b><small>⭐ ${fmt(i.value)}</small><button class="pbtn" data-i="${i.id}">Продать</button></div>`).join('')
-    : '<div class="hint" style="grid-column:1/-1">Здесь появятся подарки из кейсов. Открой первый.</div>';
-  $('invAct').innerHTML = r.items.length ? `<button class="cta" id="invAll" style="margin-top:14px">Продать всё за ${fmt(tot)} ⭐</button>` : '';
-  $('invList').querySelectorAll('.pbtn').forEach(b => b.onclick = () => csSellIds([b.dataset.i]));
-  if (r.items.length) $('invAll').onclick = () => csSellIds(r.items.map(i => i.id));
-}
-
-async function loadStats() {
-  if (!REMOTE || !U) return;
-  try {
-    const r = await apiCall('/stats');
-    const rows = [
-      ['Всего игроков', r.total],
-      ['Онлайн', r.online],
-      ['Новых сегодня', r.today],
-    ];
-    $('statsBox').innerHTML = rows.map(([k, v]) =>
-      `<div class="lg"><span>${k}</span><i></i><b>${fmt(v)}</b></div>`).join('');
-    $('statsSec').hidden = false;
-    $('statsBox').hidden = false;
-  } catch (e) {}
-}
+$('goWheel').onclick = async () => {
+  if (busy) return;
+  if (S.balance <= 0) return openDeposit();
+  if (!takeBet()) return;
+  setBusy(true); $('goWheel').disabled = true; $('goWheel').querySelector('span').textContent = 'Крутим…';
+  const b = bet, x = xVal; let win, srvBal = null;
+  if (REMOTE) {
+    try { const r = await apiCall('/wheel', { bet: b, x: x }); win = r.win; srvBal = r.balance; }
+    catch (e) { S.balance += b; setBusy(false); $('goWheel').disabled = false; render(); toast(e.message, true); return; }
+  } else win = rndFloat() < RTP / x;
+  const list = win ? WH.win : WH.lose, n = list[rndInt(list.length)], step = 360 / WH.N;
+  const target = -(n + .5) * step + (Math.random() - .5) * step * .7;
+  wheelRot = Math.ceil((wheelRot + 360 * 4 - target) / 360) * 360 + target;
+  say($('rWheel'), 'Крутим…'); $('stWheel').classList.add('spinning');
+  wheelEl.style.transform = `rotate(${wheelRot}deg)`;
+  const iv = setInterval(tick, 170);
+  setTimeout(() => {
+    clearInterval(iv); $('stWheel').classList.remove('spinning');
+    const r = $('rWheel');
+    if (win) {
+      const prize = Math.floor(b * x); settle('wheel', b, prize, x, srvBal);
+      say(r, `x${fx(x)} · выигрыш +${fmt(prize - b)} ⭐`, 'win'); haptic('success'); confetti($('stWheel')); popBalance();
+    } else { settle('wheel', b, 0, x, srvBal); say(r, `Не повезло · −${fmt(b)} ⭐`, 'lose'); haptic('error'); }
+    S.wh.unshift({ w: win, x: x }); S.wh = S.wh.slice(0, 12); save(); renderStrip();
+    setBusy(false); $('goWheel').disabled = false; render();
+  }, 2850);
+};
 
 /* ================= АПГРЕЙД ПОДАРКОВ ================= */
 const UP_R = 118, UP_C = 2 * Math.PI * UP_R, UP_RTP = 0.9;
@@ -967,6 +926,7 @@ updateUpgrade();
 
 function setOnline(n) { if (n) { $('onN').textContent = n; $('onl').hidden = false; } }
 
+/* ================= ПРОФИЛЬ ================= */
 function renderProfile() {
   $('pBal').textContent = fmt(S.balance);
   $('sDep').textContent = fmt(S.deposited); $('sWd').textContent = fmt(S.withdrawn); $('sWon').textContent = fmt(S.wonTotal);
@@ -977,12 +937,138 @@ function renderProfile() {
   loadStats();
 }
 
+/* ---------- старт ---------- */
 ['avTop', 'avBig'].forEach(id => setAvatar($(id)));
 $('nmBig').textContent = NAME; $('unBig').textContent = UNAME;
 $('testbar').hidden = REMOTE;
-setBet(100); setX(2); render();
+setBet(100); setX(2); rebuildWheel(); renderStrip(); render();
+/* ================= КЕЙСЫ ================= */
+let CS = null, GL = [], csBusy = false; const ICN = {};
+const THEME = {
+  start: ['#e8b98c', '#8a5a35', 'rgba(232,185,140,.22)'], silver: ['#eef2f8', '#7f8aa0', 'rgba(205,218,238,.2)'],
+  gold: ['#f8e6b8', '#b88d4f', 'rgba(230,200,143,.27)'], diamond: ['#b4f1fb', '#2f8ea3', 'rgba(110,222,242,.22)'], legend: ['#f4b0ec', '#8a3fae', 'rgba(210,120,232,.27)'],
+  platinum: ['#e2eaff', '#5a6fb5', 'rgba(150,178,255,.25)'], emperor: ['#ffd49a', '#a8322f', 'rgba(255,140,95,.27)'],
+  magnate: ['#c9f7d8', '#2f8a5c', 'rgba(110,222,160,.24)'], king: ['#fff0b8', '#c9820f', 'rgba(255,205,90,.34)']
+};
+const rar = v => v >= 6000 ? '#e6c88f' : v >= 2500 ? '#b48cf2' : v >= 700 ? '#6aa7e8' : v >= 90 ? '#57c99b' : '#9b98a6';
+const csPct = p => (p * 100).toFixed(p < .1 ? 1 : 0) + '%';
+const spark = (x, y, d) => `<path class="sp" style="animation-delay:${d}s" d="M${x} ${y - 5}l1.6 3.4 3.4 1.6-3.4 1.6-1.6 3.4-1.6-3.4-3.4-1.6 3.4-1.6z" fill="var(--c1)"/>`;
+function csArt(id) {
+  return `<svg class="cs-svg" viewBox="0 0 120 112"><defs><linearGradient id="gb${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--c1)"/><stop offset="1" style="stop-color:var(--c2)"/></linearGradient></defs>` +
+    `<ellipse cx="60" cy="104" rx="40" ry="6" fill="rgba(0,0,0,.35)"/><rect x="22" y="54" width="76" height="46" rx="8" fill="url(#gb${id})"/><rect x="60" y="54" width="38" height="46" rx="8" fill="rgba(0,0,0,.16)"/>` +
+    `<rect x="15" y="40" width="90" height="20" rx="7" fill="var(--c1)"/><rect x="15" y="52" width="90" height="8" rx="4" fill="rgba(0,0,0,.14)"/><rect x="53" y="40" width="14" height="60" fill="#f4efe6" opacity=".93"/>` +
+    `<path d="M60 40C38 12 12 30 44 40z" fill="#f4efe6"/><path d="M60 40C82 12 108 30 76 40z" fill="#e9dfcc"/><circle cx="60" cy="38" r="6.5" fill="#d9cdb6"/>` +
+    `<use href="#i-star" x="46" y="68" width="28" height="28"/><path d="M27 62h18" stroke="rgba(255,255,255,.4)" stroke-width="2.4" stroke-linecap="round"/>` +
+    spark(104, 30, 0) + spark(14, 24, .7) + spark(98, 76, 1.4) + `</svg>`;
+}
+async function csLoad() {
+  if (CS) return true;
+  try { const rr = await apiCall('/cases'); CS = rr.cases; GL = rr.gifts || []; CS.forEach(c => c.prizes.forEach(p => { ICN[p.name] = p.ic; KEYOF[p.name] = p.k; })); return true; }
+  catch (e) { toast(e.message, true); return false; }
+}
+async function casesEnter() {
+  if (!REMOTE) { $('csCases').innerHTML = '<div class="hint" style="grid-column:1/-1">Кейсы работают только при подключённом сервере.</div>'; return; }
+  if (!(await csLoad())) return;
+  $('csCases').innerHTML = CS.map((c, i) => { const t = THEME[c.id] || THEME.gold;
+    return `<div class="cs-card" data-c="${c.id}" style="--c1:${t[0]};--c2:${t[1]};--g:${t[2]};animation-delay:${i * 70}ms"><div class="cs-art">${csArt(c.id)}</div><b>${c.name}</b><div class="cs-up">до ⭐ ${fmt(Math.max(...c.prizes.map(p => p.value)))}</div><button class="cta"><svg class="ic"><use href="#i-star"/></svg>${fmt(c.price)}</button></div>`; }).join('');
+  $('csCases').querySelectorAll('.cs-card').forEach(el => el.onclick = () => { tick(); csOpen(el.dataset.c); });
+}
+const GIFTS = {};
+const SFX = (() => {
+  let ctx = null, on = true; try { on = localStorage.getItem('sfx') !== '0'; } catch (e) {}
+  const init = () => { try { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); } catch (e) { ctx = null; } };
+  const tone = (f, d, type, g, t0, to) => { if (!on || !ctx) return; try { const t = ctx.currentTime + (t0 || 0), o = ctx.createOscillator(), v = ctx.createGain(); o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); if (to) o.frequency.exponentialRampToValueAtTime(to, t + d); v.gain.setValueAtTime(g || .1, t); v.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(v); v.connect(ctx.destination); o.start(t); o.stop(t + d + .03); } catch (e) {} };
+  return {
+    init, get on() { return on; },
+    toggle() { on = !on; try { localStorage.setItem('sfx', on ? '1' : '0'); } catch (e) {} init(); if (on) this.tick(); return on; },
+    tick() { tone(1250, .03, 'square', .05); tone(620, .05, 'triangle', .07); },
+    win(v) { const n = v >= 6000 ? [523, 659, 784, 1047, 1319] : v >= 700 ? [523, 659, 784, 1047] : [523, 659, 784]; n.forEach((f, i) => { tone(f, .32, 'triangle', .13, i * .09); tone(f * 2, .25, 'sine', .04, i * .09); }); },
+    lose() { tone(330, .38, 'sawtooth', .07, 0, 150); },
+  };
+})();
+const sndIcon = () => SFX.on ? '🔊' : '🔇';
 
-let CS = null, GL = [], csBusy = false;
+const KEYOF = {};
+const gi = name => { const u = GIFTS[KEYOF[name]]; return u ? `<img class="gimg" src="${u}" alt="">` : `<span class="gi-e">${ICN[name] || '🎁'}</span>`; };
+const csp = $('csp');
+function csOpen(id) {
+  const c = CS.find(x => x.id === id), t = THEME[c.id] || THEME.gold;
+  csp.style.setProperty('--g', t[2]);
+  $('cspIn').innerHTML = `<div class="csp-top"><button class="csp-back" id="cspBack"><svg class="ic"><use href="#i-chev"/></svg></button><div class="csp-title">${c.name}</div><button class="csp-back" id="cspSnd" style="font-size:17px">${sndIcon()}</button><div class="csp-bal">⭐ <span id="cspBal">${fmt(S.balance)}</span></div></div>` +
+    `<div class="csp-stage" id="cspStage" style="--c1:${t[0]};--c2:${t[1]};--g:${t[2]}">${csArt('p' + c.id)}<div class="csp-sub">Шансы открыты · возврат около ${Math.round(c.rtp * 100)}% от цены</div></div>` +
+    `<div id="cspRes"></div>` +
+    `<div class="csp-h">Что может выпасть<small>${c.prizes.length} подарков</small></div><div class="csp-grid">` +
+    c.prizes.slice().sort((a, b) => b.value - a.value).map((p, i) => `<div class="pz" style="--r:${rar(p.value)};animation-delay:${Math.min(i, 12) * 30}ms"><div class="im">${gi(p.name)}</div><div class="pill">⭐ ${fmt(p.value)}</div><small>шанс ${csPct(p.p)}</small></div>`).join('') + `</div>`;
+  $('cspBar').innerHTML = `<button class="cta" id="cspGo"><svg class="ic"><use href="#i-star"/></svg><span>Открыть за ${fmt(c.price)}</span></button>`;
+  $('cspBack').onclick = () => { if (csBusy) return; csp.classList.remove('on'); };
+  $('cspGo').onclick = () => csSpin(c);
+  $('cspSnd').onclick = () => { SFX.toggle(); $('cspSnd').textContent = sndIcon(); };
+  csp.scrollTop = 0; csp.classList.add('on');
+}
+const csPick = c => { let r = Math.random(), a = 0; for (const p of c.prizes) { a += p.p; if (r < a) return p; } return c.prizes[0]; };
+async function csSpin(c) {
+  if (csBusy) return;
+  SFX.init();
+  if (S.balance < c.price) { haptic('error'); return toast('Не хватает звёзд, пополни баланс', true); }
+  csBusy = true; $('cspGo').disabled = true; $('cspRes').innerHTML = ''; csp.scrollTo({ top: 0, behavior: 'smooth' });
+  let r;
+  try { r = await apiCall('/cases/open', { case: c.id }); }
+  catch (e) { csBusy = false; $('cspGo').disabled = false; return toast(e.message, true); }
+  const W = 116, WIN = 38, cells = [];
+  for (let i = 0; i < 46; i++) cells.push(i === WIN ? c.prizes.find(p => p.name === r.item.name) : csPick(c));
+  $('cspStage').innerHTML = `<div class="cs-reel"><div class="cs-strip" id="csStrip">` +
+    cells.map(p => `<div class="cs-cell" style="--r:${rar(p.value)}"><div class="im">${gi(p.name)}</div><span>⭐ ${fmt(p.value)}</span></div>`).join('') + `</div></div>`;
+  const st = $('csStrip'), vw = st.parentElement.clientWidth, off = (Math.random() - .5) * 60;
+  const iv = setInterval(tick, 180); let done = false, lastIdx = -1;
+  const loop = () => { if (done) return; try { const m = new DOMMatrix(getComputedStyle(st).transform), idx = Math.floor((-m.m41 + vw / 2) / W); if (idx !== lastIdx) { if (lastIdx >= 0) SFX.tick(); lastIdx = idx; } } catch (e) {} requestAnimationFrame(loop); };
+  const finish = () => {
+    if (done) return; done = true;
+    clearInterval(iv); csBusy = false; $('cspGo').disabled = false; S.balance = r.balance; render(); popBalance(); haptic('success'); SFX.win(r.item.value); $('cspBal').textContent = fmt(S.balance);
+    const it = r.item;
+    $('cspRes').innerHTML = `<div class="cs-win" style="--r:${rar(it.value)}"><div class="cs-wi">${gi(it.name)}</div><div class="cs-wn">${it.name}</div><div class="cs-wv">⭐ ${fmt(it.value)}</div></div>` +
+      `<button class="cta" id="csSell" style="margin-top:10px">Продать за ${fmt(it.value)} ⭐</button><button class="pbtn" id="csKeep" style="width:100%;margin-top:10px">Оставить в инвентаре</button>`;
+    $('csSell').onclick = () => csSellIds([it.id], true);
+    $('csKeep').onclick = () => { $('cspRes').innerHTML = '<div class="csp-note">Подарок лежит в инвентаре</div>'; };
+  };
+  requestAnimationFrame(() => requestAnimationFrame(() => { st.style.transition = 'transform 5s cubic-bezier(.12,.6,.1,1)'; st.style.transform = `translateX(${-(WIN * W + W / 2 - vw / 2 + off)}px)`; }));
+  requestAnimationFrame(loop); st.addEventListener('transitionend', finish, { once: true }); setTimeout(finish, 5600);
+}
+async function csSellIds(ids, close) {
+  try {
+    const r = await apiCall('/inventory/sell', { ids: ids });
+    S.balance = r.balance; render(); popBalance(); toast('Продано: +' + fmt(r.sold) + ' ⭐');
+    if (close && $('cspRes')) { $('cspRes').innerHTML = '<div class="csp-note">Продано, звёзды на балансе</div>'; $('cspBal').textContent = fmt(S.balance); } if (view === 'inv') invEnter();
+  } catch (e) { toast(e.message, true); }
+}
+async function invEnter() {
+  if (!REMOTE) { $('invList').innerHTML = '<div class="hint" style="grid-column:1/-1">Инвентарь работает только при подключённом сервере.</div>'; return; }
+  if (!(await csLoad())) return;
+  let r; try { r = await apiCall('/inventory'); } catch (e) { return toast(e.message, true); }
+  S.balance = r.balance; render(); const tot = r.items.reduce((a, i) => a + i.value, 0);
+  $('invSum').textContent = r.items.length ? `${r.items.length} шт. на ⭐ ${fmt(tot)}` : 'Пока пусто';
+  $('invList').innerHTML = r.items.length ? r.items.map((i, k) => `<div class="inv-it" style="--r:${rar(i.value)};animation-delay:${Math.min(k, 12) * 30}ms"><div class="im">${gi(i.name)}</div><b>${i.name}</b><small>⭐ ${fmt(i.value)}</small><button class="pbtn" data-i="${i.id}">Продать</button></div>`).join('')
+    : '<div class="hint" style="grid-column:1/-1">Здесь появятся подарки из кейсов. Открой первый.</div>';
+  $('invAct').innerHTML = r.items.length ? `<button class="cta" id="invAll" style="margin-top:14px">Продать всё за ${fmt(tot)} ⭐</button>` : '';
+  $('invList').querySelectorAll('.pbtn').forEach(b => b.onclick = () => csSellIds([b.dataset.i]));
+  if (r.items.length) $('invAll').onclick = () => csSellIds(r.items.map(i => i.id));
+}
+
+async function loadStats() {
+  if (!REMOTE || !U) return;
+  try {
+    const r = await apiCall('/stats');
+    const rows = [
+      ['Всего игроков', r.total],
+      ['Онлайн', r.online],
+      ['Новых сегодня', r.today],
+    ];
+    $('statsBox').innerHTML = rows.map(([k, v]) =>
+      `<div class="lg"><span>${k}</span><i></i><b>${fmt(v)}</b></div>`).join('');
+    $('statsSec').hidden = false;
+    $('statsBox').hidden = false;
+  } catch (e) {}
+}
+
 document.body.dataset.view = 'cases';
 if (REMOTE) { syncState(); casesEnter(); }
 setInterval(render, 60000);
