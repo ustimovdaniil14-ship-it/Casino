@@ -5,7 +5,6 @@ from urllib.parse import parse_qsl
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from aiogram import Bot, Dispatcher, F
 from aiogram.types import LabeledPrice, Message, PreCheckoutQuery
 from aiogram.filters import CommandStart, CommandObject, Command
@@ -14,30 +13,34 @@ from aiogram.fsm.state import State, StatesGroup
 
 TOKEN = os.environ["BOT_TOKEN"]
 RTP, DEP_MAX, WD_LIMIT = 0.9, 100_000, 50_000
+# Все лимиты можно менять на Render (Environment) без правки кода
 def _env(name, default, cast=float): return cast(os.environ.get(name, default))
-MAX_BET   = _env("MAX_BET", 5000, int)
-WIN_CAP   = _env("WIN_CAP", 50000, int)
-COOLDOWN  = _env("COOLDOWN", 1.0)
-OWNER_ID  = 1780245250  # ТВОЙ ID
-ROLLOVER  = _env("ROLLOVER", 1.0)
-
+MAX_BET   = _env("MAX_BET", 5000, int)       # максимальная ставка за раунд
+WIN_CAP   = _env("WIN_CAP", 50000, int)      # максимальный выигрыш за раунд (ставка × множитель)
+COOLDOWN  = _env("COOLDOWN", 1.0)            # пауза между ставками одного игрока, сек (против скриптов и параллельных запросов)
+OWNER_ID  = int(re.sub(r"\D", "", os.environ.get("OWNER_ID", "")) or 0)         # твой id в StaticGram: команды промокодов в боте работают только для него (узнать id: команда /myid)
+ROLLOVER  = _env("ROLLOVER", 1.0)            # вывод открывается, когда сумма ставок >= внесённое × ROLLOVER
 def fmtn(n): return f"{int(n):,}".replace(",", " ")
 def cap_err(): return HTTPException(400, f"Максимальный выигрыш за раунд {fmtn(WIN_CAP)} ⭐. Уменьши ставку или множитель")
 def bet_err(): return HTTPException(400, f"Максимальная ставка {fmtn(MAX_BET)} ⭐")
-
+# Если бот создан не в обычном Telegram, а на своём сервере приватки,
+# задай переменную API_BASE (адрес Bot API приватки, например https://api.example.com)
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 API_BASE = os.environ.get("API_BASE", "https://api.staticgram.top").rstrip("/")
 session = AiohttpSession(api=TelegramAPIServer.from_base(API_BASE)) if API_BASE else None
 bot, dp = Bot(TOKEN, session=session), Dispatcher()
-
+# --- База данных ---
+# DATABASE_URL задан  -> Postgres (бесплатные Neon / Supabase), данные не пропадают
+# DATABASE_URL пуст   -> файл SQLite (на бесплатном Render он стирается при перезапуске!)
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 PG = DATABASE_URL.startswith("postgres")
 if PG:
     import psycopg
     from psycopg.rows import dict_row
     def _connect():
-        return psycopg.connect(DATABASE_URL, autocommit=True, row_factory=dict_row, connect_timeout=10, prepare_threshold=None)
+        return psycopg.connect(DATABASE_URL, autocommit=True, row_factory=dict_row, connect_timeout=10,
+                              prepare_threshold=None)   # без кэша планов: иначе после обновления таблиц бывает «cached plan must not change result type»
 else:
     import sqlite3
     def _connect():
@@ -53,6 +56,8 @@ class DB:
             try:
                 return self.c.execute(sql, params)
             except Exception as e:
+                # соединение с облачной базой могло закрыться: переподключаемся и повторяем,
+                # но НЕ внутри транзакции, иначе запрос мог бы примениться дважды
                 if PG and attempt == 0 and not self.in_tx and isinstance(e, (psycopg.OperationalError, psycopg.InterfaceError)):
                     self.c = _connect(); continue
                 raise
@@ -62,7 +67,6 @@ INT = "BIGINT" if PG else "INTEGER"
 SERIAL = "BIGSERIAL PRIMARY KEY" if PG else "INTEGER PRIMARY KEY AUTOINCREMENT"
 REAL = "DOUBLE PRECISION" if PG else "REAL"
 BIGGER = "GREATEST" if PG else "MAX"
-
 for stmt in (
     f"CREATE TABLE IF NOT EXISTS users(id {INT} PRIMARY KEY, balance {INT} DEFAULT 0, deposited {INT} DEFAULT 0,"
     f" withdrawn {INT} DEFAULT 0, won_total {INT} DEFAULT 0, played {INT} DEFAULT 0, won {INT} DEFAULT 0,"
@@ -72,29 +76,39 @@ for stmt in (
     "CREATE INDEX IF NOT EXISTS ops_uid ON ops(uid, n)",
     f"CREATE TABLE IF NOT EXISTS promos(code TEXT PRIMARY KEY, amount {INT}, max_uses {INT}, used {INT} DEFAULT 0, active {INT} DEFAULT 1, created {INT})",
     f"CREATE TABLE IF NOT EXISTS promo_uses(code TEXT, uid {INT}, ts {INT}, PRIMARY KEY(code, uid))",
-    f"CREATE TABLE IF NOT EXISTS hub_users(id {INT} PRIMARY KEY, first_seen {INT}, last_seen {INT})",
-    f"CREATE TABLE IF NOT EXISTS inv(id TEXT PRIMARY KEY, uid {INT}, case_id TEXT, name TEXT, value {INT}, ts {INT}, sold {INT} DEFAULT 0)",
 ):
     db.execute(stmt)
 
-try: db.execute(f"ALTER TABLE users ADD COLUMN bonus {INT} DEFAULT 0")
-except Exception: pass
-try: db.execute(f"ALTER TABLE users ADD COLUMN daily_ts {INT} DEFAULT 0")
-except Exception: pass
+try:   # бонусные звёзды от промокодов (для условия по обороту при выводе)
+    db.execute(f"ALTER TABLE users ADD COLUMN bonus {INT} DEFAULT 0")
+except Exception:
+    pass
+
+# Мины удалены: возвращаем ставки незаконченных игр и убираем таблицу
+try:
+    for r in db.execute("SELECT uid, bet FROM mines").fetchall():
+        db.execute("UPDATE users SET balance=balance+? WHERE id=?", (r["bet"], r["uid"]))
+    db.execute("DROP TABLE mines")
+except Exception:
+    pass
 
 @contextlib.contextmanager
 def tx():
     db.execute("BEGIN"); db.in_tx = True
-    try: yield
+    try:
+        yield
     except BaseException:
         try: db.execute("ROLLBACK")
-        except Exception: db.c = _connect()
+        except Exception: db.c = _connect()   # связь оборвалась: открытая транзакция всё равно откатится на стороне базы
         raise
-    else: db.execute("COMMIT")
-    finally: db.in_tx = False
+    else:
+        db.execute("COMMIT")
+    finally:
+        db.in_tx = False
 
 lock = asyncio.Lock()
-seen = {}
+
+seen = {}   # когда игрок последний раз обращался к серверу (для счётчика онлайна)
 def online():
     now = time.time()
     for k in [k for k, v in seen.items() if now - v > 300]: del seen[k]
@@ -111,17 +125,11 @@ def auth(request: Request) -> int:
     uid = json.loads(d["user"])["id"]
     seen[uid] = time.time()
     db.execute("INSERT INTO users(id) VALUES(?) ON CONFLICT DO NOTHING", (uid,))
-    
-    now = int(time.time())
-    if db.execute("SELECT 1 FROM hub_users WHERE id=?", (uid,)).fetchone():
-        db.execute("UPDATE hub_users SET last_seen=? WHERE id=?", (now, uid))
-    else:
-        db.execute("INSERT INTO hub_users(id, first_seen, last_seen) VALUES(?,?,?)", (uid, now, now))
-        
     return uid
 
-last_bet = {}
+last_bet = {}   # когда игрок делал последнюю ставку
 def gate(uid):
+    """Не чаще одной ставки в COOLDOWN секунд на игрока: останавливает скрипты и пачки параллельных запросов."""
     now = time.monotonic()
     if now - last_bet.get(uid, 0) < COOLDOWN: raise HTTPException(429, "Не так быстро, подожди секунду")
     last_bet[uid] = now
@@ -133,13 +141,9 @@ def state(uid):
     ops = [dict(k=r["k"], a=r["a"], b=r["b"], p=r["p"], x=r["x"], g=r["g"], id=r["cid"], ts=r["ts"])
            for r in db.execute("SELECT * FROM ops WHERE uid=? ORDER BY n DESC LIMIT 100", (uid,))]
     today = time.strftime("%Y-%m-%d")
-    
-    daily_ts = u["daily_ts"] if u and "daily_ts" in u.keys() else 0
-    daily_left = max(0, 86400 - (int(time.time()) - (daily_ts or 0)))
-    
     return dict(balance=u["balance"], deposited=u["deposited"], withdrawn=u["withdrawn"], wonTotal=u["won_total"],
                 played=u["played"], won=u["won"], wagered=u["wagered"], best=u["best"], bonus=u["bonus"] or 0, ops=ops,
-                wd=dict(d=u["wd_day"] or today, u=u["wd_used"] if u["wd_day"] == today else 0), daily_left=daily_left)
+                wd=dict(d=u["wd_day"] or today, u=u["wd_used"] if u["wd_day"] == today else 0))
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_headers=["*"], allow_methods=["*"])
@@ -156,71 +160,13 @@ async def _h(_, e): return JSONResponse({"error": e.detail}, e.status_code)
 async def health(): return {"ok": True}
 
 @app.api_route("/", methods=["GET", "HEAD"])
-async def index(): return FileResponse("index.html")
+async def index(): return FileResponse("index.html")  # мини-апп отдаётся с этого же сервера
 
 @app.get("/api/state")
 async def get_state(request: Request):
     uid = auth(request)
     return {"state": state(uid), "online": online()}
 
-@app.get("/api/stats")
-async def get_stats(request: Request):
-    uid = auth(request)
-    if OWNER_ID and uid != OWNER_ID: raise HTTPException(403, "Нет доступа")
-    now = int(time.time())
-    total = db.execute("SELECT COUNT(*) c FROM hub_users").fetchone()["c"]
-    today_start = int(time.mktime(time.localtime()[:3] + (0, 0, 0, 0, 0, -1)))
-    today = db.execute("SELECT COUNT(*) c FROM hub_users WHERE first_seen>=?", (today_start,)).fetchone()["c"]
-    return {"total": total, "online": online(), "today": today}
-
-# --- КЕЙСЫ ---
-ITEMS = {
-    "bear": ("Мишка", 15, "🧸"), "heart": ("Сердце", 15, "💝"), "gift": ("Подарок", 25, "🎁"), "rose": ("Роза", 25, "🌹"),
-    "cake": ("Торт", 50, "🎂"), "bouq": ("Букет", 50, "💐"), "rocket": ("Ракета", 50, "🚀"), "champ": ("Шампанское", 50, "🍾"),
-    "cup": ("Кубок", 100, "🏆"), "ring": ("Кольцо", 100, "💍"), "dia": ("Алмаз", 100, "💎"), "sbear": ("Static-мишка", 100, "🐻"),
-    "lolly": ("Леденец", 800, "🍭"), "box": ("Подарок 2025", 1000, "📦"), "cane": ("Леденец-трость", 1200, "🍬"),
-    "eskimo": ("Эскимо", 2000, "🍦"), "fist": ("Золотой кулак", 2888, "💪"), "tile": ("Сердце-плитка", 2888, "❤️"),
-    "book": ("Книга", 3000, "📕"), "ufc": ("UFC-бокс", 3500, "🥊"), "glass": ("Роза в колбе", 3500, "🥀"),
-    "statue": ("Статуя Свободы", 3700, "🗽"), "lamp": ("Фонарь", 4000, "🏮"), "crystal": ("Кристалл", 4444, "🔮"),
-    "voodoo": ("Вуду-кукла", 5000, "🪆"), "cal": ("Календарь", 5500, "📅"), "watch": ("Часы", 5555, "⌚"),
-    "hat": ("Шапка", 6000, "🎩"), "bell": ("Колокольчики", 8000, "🔔"), "gring": ("Золотое кольцо", 8000, "💍"),
-    "helmet": ("Шлем-кот", 8500, "🐱"), "car": ("Снуп Догг", 8998, "🚗"), "cap": ("Кепка", 9500, "🧢"),
-    "cat15": ("Рыжий кот", 15000, "🐈"), "bear17": ("Чёрный мишка", 17000, "🐻"), "cat25": ("Чёрный кот", 25000, "🐈‍⬛"),
-    "heartc": ("Космическое сердце", 40000, "💖"),
-}
-CASES = [
-    ("start", "Стартовый", 50, "bear heart gift rose cake bouq rocket champ cup ring dia sbear"),
-    ("silver", "Серебряный", 150, "cake bouq rocket champ cup ring dia sbear lolly"),
-    ("gold", "Золотой", 500, "cup ring dia sbear lolly box cane eskimo"),
-    ("diamond", "Алмазный", 2000, "lolly box cane eskimo fist tile book ufc glass"),
-    ("legend", "Легенда", 5000, "eskimo fist tile book ufc glass statue lamp crystal voodoo watch cal hat bell gring helmet car cap"),
-    ("platinum", "Платина", 8000, "crystal voodoo cal watch hat bell gring helmet car cap cat15"),
-    ("emperor", "Император", 12000, "hat bell gring helmet car cap cat15 bear17 cat25"),
-]
-RTP_TARGET = 0.86
-def _build(cid, title, price, keys):
-    vals = [ITEMS[k][1] for k in keys]
-    lo, hi = -1.0, 8.0
-    for _ in range(80):
-        k = (lo + hi) / 2; ws = [v ** -k for v in vals]
-        if sum(w * v for w, v in zip(ws, vals)) / sum(ws) / price > RTP_TARGET: lo = k
-        else: hi = k
-    ws = [v ** -k for v in vals]; tot = sum(ws)
-    prizes = [dict(k=x, name=ITEMS[x][0], value=ITEMS[x][1], ic=ITEMS[x][2], w=max(1, round(w / tot * 100000))) for x, w in zip(keys, ws)]
-    return dict(id=cid, name=title, price=price, prizes=prizes)
-
-@app.get("/api/cases")
-async def cases_catalog(request: Request):
-    uid = auth(request)
-    out = []
-    for cid, title, price, keys in CASES:
-        c = _build(cid, title, price, keys)
-        tot = sum(p["w"] for p in c["prizes"])
-        out.append(dict(id=c["id"], name=c["name"], price=c["price"], rtp=0.86,
-                        prizes=[dict(k=p["k"], name=p["name"], value=p["value"], ic=p["ic"], p=p["w"]/tot) for p in c["prizes"]]))
-    return {"gifts": [dict(k=k, name=v[0], value=v[1], ic=v[2]) for k, v in sorted(ITEMS.items(), key=lambda kv: kv[1][1])], "cases": out}
-
-# --- ОСТАЛЬНОЕ ---
 @app.post("/api/deposit")
 async def deposit(request: Request):
     uid = auth(request); a = int((await request.json()).get("amount", 0))
@@ -237,6 +183,7 @@ async def deposit_chat(request: Request):
         currency="XTR", prices=[LabeledPrice(label="Пополнение", amount=a)])
     return {"ok": True}
 
+# --- Вызов методов StaticGram, которых нет в aiogram (withdrawStarBalance и т.п.) ---
 async def sg_call(method, **params):
     import aiohttp
     async with aiohttp.ClientSession() as s:
@@ -252,18 +199,21 @@ WD_ERRORS = {
 
 @app.post("/api/withdraw")
 async def withdraw(request: Request):
+    """Автовывод: статики сразу отправляются игроку методом withdrawStarBalance (StaticGram)."""
     uid = auth(request); a = int((await request.json()).get("amount", 0))
-    cid = "wd" + secrets.token_hex(12); ts = int(time.time() * 1000)
+    cid = "wd" + secrets.token_hex(12); ts = int(time.time() * 1000)   # он же request_id (идемпотентность)
+    # 1) резервируем сумму на балансе игрока
     async with lock:
         s = state(uid)
         if a < 1 or a > s["balance"]: raise HTTPException(400, "Не хватает звёзд")
         if a > WD_LIMIT - s["wd"]["u"]: raise HTTPException(400, "Дневной лимит")
-        need = int((s["deposited"] + s["bonus"]) * ROLLOVER - s["wagered"] + .999)
+        need = int((s["deposited"] + s["bonus"]) * ROLLOVER - s["wagered"] + .999)   # бонусы от промокодов тоже нужно отыграть
         if need > 0: raise HTTPException(400, f"Чтобы вывести, сыграй ещё на {fmtn(need)} ⭐ ставок")
         with tx():
             db.execute("UPDATE users SET balance=balance-?, withdrawn=withdrawn+?, wd_day=?, wd_used=? WHERE id=?",
                        (a, a, s["wd"]["d"], s["wd"]["u"] + a, uid))
             db.execute("INSERT INTO ops(uid,k,a,cid,ts) VALUES(?,?,?,?,?)", (uid, "wd", a, cid, ts))
+    # 2) отправляем звёзды игроку (при сбое связи повторяем с тем же request_id — двойной выплаты не будет)
     res = None
     for _ in range(2):
         try:
@@ -271,12 +221,12 @@ async def withdraw(request: Request):
             break
         except Exception as e:
             print("WITHDRAW NET ERROR:", repr(e), flush=True)
-    if res is None:
+    if res is None:  # связь пропала: деньги не возвращаем автоматически, чтобы не выплатить дважды
         raise HTTPException(502, "Выплата в обработке. Если звёзды не пришли, напиши в поддержку")
     if not res.get("ok"):
         desc = str(res.get("description", ""))
         print("WITHDRAW FAIL:", desc, flush=True)
-        async with lock:
+        async with lock:   # выплата отклонена — возвращаем сумму на баланс игрока
             with tx():
                 db.execute(f"UPDATE users SET balance=balance+?, withdrawn=withdrawn-?, wd_used={BIGGER}(0, wd_used-?) WHERE id=?",
                            (a, a, a, uid))
@@ -284,11 +234,20 @@ async def withdraw(request: Request):
         raise HTTPException(400, next((m for k, m in WD_ERRORS.items() if k in desc), "Вывод не удался, попробуй позже"))
     return {"op": dict(k="wd", a=a, id=cid, ts=ts)}
 
+def play(uid, bet, payout, x, game):
+    with tx():
+        db.execute("UPDATE users SET balance=balance-?+?, played=played+1, wagered=wagered+?, won_total=won_total+?,"
+                   f" won=won+?, best={BIGGER}(best,?) WHERE id=?",
+                   (bet, payout, bet, payout, 1 if payout > bet else 0, max(0, payout - bet), uid))
+        db.execute("INSERT INTO ops(uid,k,g,b,p,x,ts) VALUES(?,?,?,?,?,?,?)", (uid, "game", game, bet, payout, x, int(time.time() * 1000)))
+    return db.execute("SELECT balance FROM users WHERE id=?", (uid,)).fetchone()["balance"]
+
+# ---- Промокоды ----
 def norm_code(x):
     c = (x or "").strip().upper()
     return c if re.fullmatch(r"[\w-]{3,20}", c) else ""
 
-promo_fail = {}
+promo_fail = {}   # защита от подбора кодов: uid -> (время первой ошибки, число ошибок)
 def promo_limit(uid):
     t, n = promo_fail.get(uid, (0.0, 0))
     if time.time() - t <= 600 and n >= 5: raise HTTPException(429, "Слишком много неверных попыток. Подожди несколько минут")
@@ -319,6 +278,8 @@ async def promo(request: Request):
         bal = db.execute("SELECT balance FROM users WHERE id=?", (uid,)).fetchone()["balance"]
     return {"amount": a, "balance": bal}
 
+# ---- бот: оплата звёздами ----
+# ---- «Своё количество»: бот спрашивает сумму и присылает инвойс ----
 class Dep(StatesGroup):
     amount = State()
 
@@ -330,6 +291,8 @@ async def start_cmd(m: Message, command: CommandObject, state: FSMContext):
     else:
         await m.answer("Открой мини-апп кнопкой меню.")
 
+
+# ---- Промокоды: создание только для владельца (OWNER_ID) ----
 def is_owner(m: Message): return bool(OWNER_ID) and m.from_user is not None and m.from_user.id == OWNER_ID
 
 @dp.message(Command("myid"))
@@ -387,125 +350,20 @@ async def paid(m: Message):
         with tx():
             cur = db.execute("INSERT INTO ops(uid,k,a,cid,ts) VALUES(?,?,?,?,?) ON CONFLICT (cid) DO NOTHING",
                              (m.from_user.id, "dep", a, p.telegram_payment_charge_id, int(time.time() * 1000)))
-            if cur.rowcount == 0: return
+            if cur.rowcount == 0: return  # этот платёж уже зачислен
             db.execute("UPDATE users SET balance=balance+?, deposited=deposited+? WHERE id=?", (a, a, m.from_user.id))
     await m.answer(f"✅ Пополнение зачислено: {a} ⭐\nОткрой мини-апп, чтобы играть.")
 
 @app.on_event("startup")
 async def start(): asyncio.create_task(dp.start_polling(bot))
 
-class CaseOpenRequest(BaseModel):
-    case: str
-    amount: int = 1
-    instant: bool = False
+# ---------------------------------------------------------------------------
+# Работа с API StaticGram (счета, вывод, возвраты): используй документацию
+# и библиотеку/описание методов на docs.staticgram.top
+#   Оплата и вывод: https://docs.staticgram.top/guide/payments
+#   Mini Apps:      https://docs.staticgram.top/guide/miniapps
+# ---------------------------------------------------------------------------
 
-@app.post("/api/cases/open")
-async def open_case(request: Request, data: CaseOpenRequest):
-    uid = auth(request)
-    cid = data.case
-    amount = max(1, min(5, data.amount))
-    
-    if cid == "daily":
-        if uid != OWNER_ID:
-            u = db.execute("SELECT daily_ts FROM users WHERE id=?", (uid,)).fetchone()
-            last_ts = u["daily_ts"] if u and "daily_ts" in u.keys() else 0
-            now = int(time.time())
-            if now - last_ts < 86400:
-                raise HTTPException(400, "Ежедневный кейс будет доступен позже")
-            db.execute("UPDATE users SET daily_ts=? WHERE id=?", (now, uid))
-        
-        prizes = [
-            {"k": "cup", "name": "Кубок", "value": 100, "ic": "🏆", "w": 4000},
-            {"k": "ring", "name": "Кольцо", "value": 100, "ic": "💍", "w": 2000},
-            {"k": "dia", "name": "Алмаз", "value": 100, "ic": "💎", "w": 1500},
-            {"k": "sbear", "name": "Static-мишка", "value": 100, "ic": "🐻", "w": 1000},
-            {"k": "lolly", "name": "Леденец", "value": 800, "ic": "🍭", "w": 700},
-            {"k": "box", "name": "Подарок 2025", "value": 1000, "ic": "📦", "w": 400},
-            {"k": "eskimo", "name": "Эскимо", "value": 2000, "ic": "🍦", "w": 200},
-            {"k": "fist", "name": "Золотой кулак", "value": 2888, "ic": "💪", "w": 100},
-            {"k": "book", "name": "Книга", "value": 3000, "ic": "📕", "w": 50},
-        ]
-        p = secrets.SystemRandom().choices(prizes, weights=[x["w"] for x in prizes])[0]
-        price = 0
-    else:
-        c = None
-        for cid2, title, p2, keys in CASES:
-            if cid2 == cid:
-                c = _build(cid2, title, p2, keys)
-                break
-        if not c: raise HTTPException(400, "Нет такого кейса")
-        price = c["price"] * amount
-
-    async with lock:
-        s = state(uid)
-        if s["balance"] < price: raise HTTPException(400, "Не хватает звёзд")
-        gate(uid)
-        
-        with tx():
-            if price > 0:
-                cur = db.execute("UPDATE users SET balance=balance-?, played=played+?, wagered=wagered+? WHERE id=? AND balance>=?",
-                                 (price, amount, price, uid, price))
-                if cur.rowcount == 0: raise HTTPException(400, "Не хватает звёзд")
-            
-            items = []
-            if cid == "daily":
-                iid = secrets.token_hex(8)
-                db.execute("INSERT INTO inv(id,uid,case_id,name,value,ts) VALUES(?,?,?,?,?,?)",
-                           (iid, uid, cid, p["name"], p["value"], int(time.time() * 1000)))
-                items.append(dict(id=iid, k=p["k"], name=p["name"], value=p["value"], ic=p["ic"], case=cid))
-            else:
-                for _ in range(amount):
-                    p = secrets.SystemRandom().choices(c["prizes"], weights=[x["w"] for x in c["prizes"]])[0]
-                    iid = secrets.token_hex(8)
-                    db.execute("INSERT INTO inv(id,uid,case_id,name,value,ts) VALUES(?,?,?,?,?,?)",
-                               (iid, uid, cid, p["name"], p["value"], int(time.time() * 1000)))
-                    items.append(dict(id=iid, k=p["k"], name=p["name"], value=p["value"], ic=p["ic"], case=cid))
-                
-        bal = db.execute("SELECT balance FROM users WHERE id=?", (uid,)).fetchone()["balance"]
-    return {"items": items, "balance": bal}
-
-@app.get("/api/inventory")
-async def inventory(request: Request):
-    uid = auth(request)
-    rows = db.execute("SELECT id,case_id,name,value,ts FROM inv WHERE uid=? AND sold=0 ORDER BY ts DESC LIMIT 200", (uid,)).fetchall()
-    return {"items": [dict(r) for r in rows], "balance": db.execute("SELECT balance FROM users WHERE id=?", (uid,)).fetchone()["balance"]}
-
-@app.post("/api/inventory/sell")
-async def sell(request: Request):
-    uid = auth(request); ids = [str(i) for i in ((await request.json()).get("ids") or [])][:200]
-    total = 0
-    async with lock:
-        with tx():
-            for i in ids:
-                if db.execute("UPDATE inv SET sold=1 WHERE id=? AND uid=? AND sold=0", (i, uid)).rowcount:
-                    total += db.execute("SELECT value FROM inv WHERE id=?", (i,)).fetchone()["value"]
-            if total:
-                db.execute("UPDATE users SET balance=balance+?, won_total=won_total+? WHERE id=?", (total, total, uid))
-        bal = db.execute("SELECT balance FROM users WHERE id=?", (uid,)).fetchone()["balance"]
-    return {"sold": total, "balance": bal}
-
-@app.post("/api/upgrade_item")
-async def upgrade_item(request: Request):
-    uid = auth(request); j = await request.json(); iid = str(j.get("id") or ""); tk = j.get("target")
-    if tk not in ITEMS: raise HTTPException(400, "Нет такого подарка")
-    name, val, ic = ITEMS[tk]
-    async with lock:
-        row = db.execute("SELECT value FROM inv WHERE id=? AND uid=? AND sold=0", (iid, uid)).fetchone()
-        if not row: raise HTTPException(400, "Подарок не найден")
-        bp = int(0.9 * row["value"] / val * 10000)
-        if val <= row["value"] or bp < 200 or bp > 7500:
-            raise HTTPException(400, "Выбери подарок подороже: шанс должен быть от 2% до 75%")
-        gate(uid)
-        win = secrets.randbelow(10000) < bp
-        new = None
-        with tx():
-            if db.execute("UPDATE inv SET sold=2 WHERE id=? AND uid=? AND sold=0", (iid, uid)).rowcount == 0:
-                raise HTTPException(400, "Подарок не найден")
-            db.execute("UPDATE users SET played=played+1, won=won+? WHERE id=?", (1 if win else 0, uid))
-            if win:
-                nid = secrets.token_hex(8)
-                db.execute("INSERT INTO inv(id,uid,case_id,name,value,ts) VALUES(?,?,?,?,?,?)",
-                           (nid, uid, "upgrade", name, val, int(time.time() * 1000)))
-                new = dict(id=nid, k=tk, name=name, value=val, ic=ic, case="upgrade")
-        bal = db.execute("SELECT balance FROM users WHERE id=?", (uid,)).fetchone()["balance"]
-    return {"win": win, "item": new, "balance": bal}
+# ---- Кейсы (файл cases.py лежит рядом) ----
+import cases
+cases.setup(app, auth, db, tx, lock, PG, gate)
