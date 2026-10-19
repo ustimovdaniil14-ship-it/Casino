@@ -4,6 +4,8 @@ import secrets, time
 from fastapi import Request, HTTPException
 
 RTP_TARGET = 0.86
+OWNER_ID = 1780245250
+
 ITEMS = {  # ключ: (название, цена в звёздах, значок)
     "bear": ("Мишка", 15, "🧸"), "heart": ("Сердце", 15, "💝"), "gift": ("Подарок", 25, "🎁"), "rose": ("Роза", 25, "🌹"),
     "cake": ("Торт", 50, "🎂"), "bouq": ("Букет", 50, "💐"), "rocket": ("Ракета", 50, "🚀"), "champ": ("Шампанское", 50, "🍾"),
@@ -28,6 +30,7 @@ CASES = [
     ("emperor", "Император", 12000, "hat bell gring helmet car cap cat15 bear17 cat25"),
 ]
 
+# Дорогие кейсы: шансы заданы вручную (проценты, сумма = 100). Возврат считается из них и виден игроку.
 FIXED = [
     ("magnate", "Магнат", 20000, "cat25:26 bear17:20 cat15:17 cap:11 car:7 bell:6 hat:4 watch:3 lamp:1.5 ufc:.5 heartc:4"),
     ("king", "Король", 30000, "heartc:24 cat25:30 bear17:18 cat15:16 cap:12"),
@@ -44,7 +47,7 @@ def _fixed(cid, title, price, spec):
 def _build(cid, title, price, keys):
     vals = [ITEMS[k][1] for k in keys]
     lo, hi = -1.0, 8.0
-    for _ in range(80):
+    for _ in range(80):   # чем выше k, тем чаще выпадают дешёвые призы
         k = (lo + hi) / 2; ws = [v ** -k for v in vals]
         if sum(w * v for w, v in zip(ws, vals)) / sum(ws) / price > RTP_TARGET: lo = k
         else: hi = k
@@ -56,6 +59,19 @@ def _build(cid, title, price, keys):
 
 CATALOG = {c[0]: _build(c[0], c[1], c[2], c[3].split()) for c in CASES}
 CATALOG.update({c[0]: _fixed(*c) for c in FIXED})
+
+# --- НАГРАДЫ ДЛЯ ЕЖЕДНЕВНОГО КЕЙСА ---
+DAILY_PRIZES = [
+    dict(k="cup", name="Кубок", value=100, ic="🏆", w=4000),
+    dict(k="ring", name="Кольцо", value=100, ic="💍", w=2000),
+    dict(k="dia", name="Алмаз", value=100, ic="💎", w=1500),
+    dict(k="sbear", name="Static-мишка", value=100, ic="🐻", w=1000),
+    dict(k="lolly", name="Леденец", value=800, ic="🍭", w=700),
+    dict(k="box", name="Подарок 2025", value=1000, ic="📦", w=400),
+    dict(k="eskimo", name="Эскимо", value=2000, ic="🍦", w=200),
+    dict(k="fist", name="Золотой кулак", value=2888, ic="💪", w=100),
+    dict(k="book", name="Книга", value=3000, ic="📕", w=50),
+]
 
 def setup(app, auth, db, tx, lock, PG, gate=lambda uid: None):
     big = "BIGINT" if PG else "INTEGER"
@@ -72,13 +88,37 @@ def setup(app, auth, db, tx, lock, PG, gate=lambda uid: None):
                                prizes=[dict(k=p["k"], name=p["name"], value=p["value"], ic=p["ic"], p=p["w"] / c["total"]) for p in c["prizes"]])
                           for c in CATALOG.values()]}
 
+    # --- ЕЖЕДНЕВНЫЙ КЕЙС ---
+    @app.post("/api/cases/daily")
+    async def open_daily(request: Request):
+        uid = auth(request)
+        row = db.execute("SELECT daily_ts FROM users WHERE id=?", (uid,)).fetchone()
+        last_ts = row["daily_ts"] if row and "daily_ts" in row.keys() else 0
+        now = int(time.time())
+        
+        if uid != OWNER_ID and now - last_ts < 86400:
+            raise HTTPException(400, "Ежедневный кейс будет доступен позже")
+            
+        if uid != OWNER_ID:
+            db.execute("UPDATE users SET daily_ts=? WHERE id=?", (now, uid))
+
+        async with lock:
+            with tx():
+                p = secrets.SystemRandom().choices(DAILY_PRIZES, weights=[x["w"] for x in DAILY_PRIZES])[0]
+                iid = secrets.token_hex(8)
+                db.execute("INSERT INTO inv(id,uid,case_id,name,value,ts) VALUES(?,?,?,?,?,?)",
+                           (iid, uid, "daily", p["name"], p["value"], int(time.time() * 1000)))
+            bal = balance(uid)
+        return {"items": [dict(id=iid, k=p["k"], name=p["name"], value=p["value"], ic=p["ic"], case="daily")], "balance": bal}
+
+    # --- ОБЫЧНЫЙ КЕЙС ---
     @app.post("/api/cases/open")
     async def open_case(request: Request):
         uid = auth(request); c = CATALOG.get((await request.json()).get("case"))
         if not c: raise HTTPException(400, "Нет такого кейса")
         async with lock:
             if balance(uid) < c["price"]: raise HTTPException(400, "Не хватает звёзд")
-            gate(uid)
+            gate(uid)   # пауза между открытиями
             with tx():
                 cur = db.execute("UPDATE users SET balance=balance-?, played=played+1, wagered=wagered+?"
                                  " WHERE id=? AND balance>=?", (c["price"], c["price"], uid, c["price"]))
@@ -110,6 +150,7 @@ def setup(app, auth, db, tx, lock, PG, gate=lambda uid: None):
             bal = balance(uid)
         return {"sold": total, "balance": bal}
 
+    # Апгрейд подарков: свой подарок -> более дорогой. Шанс = 90% * цена_своего / цена_цели (от 2% до 75%), показывается игроку.
     @app.post("/api/upgrade_item")
     async def upgrade_item(request: Request):
         uid = auth(request); j = await request.json(); iid = str(j.get("id") or ""); tk = j.get("target")
