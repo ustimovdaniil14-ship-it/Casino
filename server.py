@@ -5,6 +5,7 @@ from urllib.parse import parse_qsl
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from aiogram import Bot, Dispatcher, F
 from aiogram.types import LabeledPrice, Message, PreCheckoutQuery
 from aiogram.filters import CommandStart, CommandObject, Command
@@ -17,7 +18,7 @@ def _env(name, default, cast=float): return cast(os.environ.get(name, default))
 MAX_BET   = _env("MAX_BET", 5000, int)
 WIN_CAP   = _env("WIN_CAP", 50000, int)
 COOLDOWN  = _env("COOLDOWN", 1.0)
-OWNER_ID  = 1780245250  # ТВОЙ ID ВПИСАН СЮДА
+OWNER_ID  = 1780245250  # ТВОЙ ID
 ROLLOVER  = _env("ROLLOVER", 1.0)
 
 def fmtn(n): return f"{int(n):,}".replace(",", " ")
@@ -61,6 +62,7 @@ INT = "BIGINT" if PG else "INTEGER"
 SERIAL = "BIGSERIAL PRIMARY KEY" if PG else "INTEGER PRIMARY KEY AUTOINCREMENT"
 REAL = "DOUBLE PRECISION" if PG else "REAL"
 BIGGER = "GREATEST" if PG else "MAX"
+
 for stmt in (
     f"CREATE TABLE IF NOT EXISTS users(id {INT} PRIMARY KEY, balance {INT} DEFAULT 0, deposited {INT} DEFAULT 0,"
     f" withdrawn {INT} DEFAULT 0, won_total {INT} DEFAULT 0, played {INT} DEFAULT 0, won {INT} DEFAULT 0,"
@@ -75,6 +77,9 @@ for stmt in (
     db.execute(stmt)
 
 try: db.execute(f"ALTER TABLE users ADD COLUMN bonus {INT} DEFAULT 0")
+except Exception: pass
+
+try: db.execute(f"ALTER TABLE users ADD COLUMN daily_ts {INT} DEFAULT 0")
 except Exception: pass
 
 try:
@@ -134,9 +139,13 @@ def state(uid):
     ops = [dict(k=r["k"], a=r["a"], b=r["b"], p=r["p"], x=r["x"], g=r["g"], id=r["cid"], ts=r["ts"])
            for r in db.execute("SELECT * FROM ops WHERE uid=? ORDER BY n DESC LIMIT 100", (uid,))]
     today = time.strftime("%Y-%m-%d")
+    
+    daily_ts = u.get("daily_ts", 0) if isinstance(u, dict) else (u["daily_ts"] if u and "daily_ts" in u.keys() else 0)
+    daily_left = max(0, 86400 - (int(time.time()) - (daily_ts or 0)))
+    
     return dict(balance=u["balance"], deposited=u["deposited"], withdrawn=u["withdrawn"], wonTotal=u["won_total"],
                 played=u["played"], won=u["won"], wagered=u["wagered"], best=u["best"], bonus=u["bonus"] or 0, ops=ops,
-                wd=dict(d=u["wd_day"] or today, u=u["wd_used"] if u["wd_day"] == today else 0))
+                wd=dict(d=u["wd_day"] or today, u=u["wd_used"] if u["wd_day"] == today else 0), daily_left=daily_left)
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_headers=["*"], allow_methods=["*"])
@@ -163,14 +172,12 @@ async def get_state(request: Request):
 @app.get("/api/stats")
 async def get_stats(request: Request):
     uid = auth(request)
-    if OWNER_ID and uid != OWNER_ID:
-        raise HTTPException(403, "Нет доступа")
+    if OWNER_ID and uid != OWNER_ID: raise HTTPException(403, "Нет доступа")
     now = int(time.time())
     total = db.execute("SELECT COUNT(*) c FROM hub_users").fetchone()["c"]
-    online_cnt = online()
     today_start = int(time.mktime(time.localtime()[:3] + (0, 0, 0, 0, 0, -1)))
     today = db.execute("SELECT COUNT(*) c FROM hub_users WHERE first_seen>=?", (today_start,)).fetchone()["c"]
-    return {"total": total, "online": online_cnt, "today": today}
+    return {"total": total, "online": online(), "today": today}
 
 @app.post("/api/deposit")
 async def deposit(request: Request):
@@ -354,4 +361,56 @@ async def paid(m: Message):
 async def start(): asyncio.create_task(dp.start_polling(bot))
 
 import cases
+from pydantic import BaseModel
+
+class CaseOpenRequest(BaseModel):
+    case: str
+    amount: int = 1
+    instant: bool = False
+
+@app.post("/api/cases/open")
+async def open_case(request: Request, data: CaseOpenRequest):
+    uid = auth(request)
+    cid = data.case
+    amount = max(1, min(5, data.amount))
+    
+    if cid == "daily":
+        u = db.execute("SELECT daily_ts FROM users WHERE id=?", (uid,)).fetchone()
+        last_ts = u["daily_ts"] if u and "daily_ts" in u.keys() else 0
+        now = int(time.time())
+        if now - last_ts < 86400:
+            raise HTTPException(400, "Ежедневный кейс будет доступен позже")
+        db.execute("UPDATE users SET daily_ts=? WHERE id=?", (now, uid))
+        price = 0
+    else:
+        c = cases.CATALOG.get(cid)
+        if not c: raise HTTPException(400, "Нет такого кейса")
+        price = c["price"] * amount
+
+    async with lock:
+        s = state(uid)
+        if s["balance"] < price: raise HTTPException(400, "Не хватает звёзд")
+        gate(uid)
+        
+        with tx():
+            if price > 0:
+                cur = db.execute("UPDATE users SET balance=balance-?, played=played+?, wagered=wagered+? WHERE id=? AND balance>=?",
+                                 (price, amount, price, uid, price))
+                if cur.rowcount == 0: raise HTTPException(400, "Не хватает звёзд")
+            
+            items = []
+            for _ in range(amount):
+                if cid == "daily":
+                    p = {"k": "heart", "name": "Сердце", "value": 15, "ic": "💝"}
+                else:
+                    p = secrets.SystemRandom().choices(c["prizes"], weights=[x["w"] for x in c["prizes"]])[0]
+                
+                iid = secrets.token_hex(8)
+                db.execute("INSERT INTO inv(id,uid,case_id,name,value,ts) VALUES(?,?,?,?,?,?)",
+                           (iid, uid, cid, p["name"], p["value"], int(time.time() * 1000)))
+                items.append(dict(id=iid, k=p["k"], name=p["name"], value=p["value"], ic=p["ic"], case=cid))
+                
+        bal = balance(uid)
+    return {"items": items, "balance": bal}
+
 cases.setup(app, auth, db, tx, lock, PG, gate)
