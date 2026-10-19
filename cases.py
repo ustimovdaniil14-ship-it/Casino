@@ -4,8 +4,6 @@ import secrets, time
 from fastapi import Request, HTTPException
 
 RTP_TARGET = 0.86
-OWNER_ID = 1780245250
-
 ITEMS = {  # ключ: (название, цена в звёздах, значок)
     "bear": ("Мишка", 15, "🧸"), "heart": ("Сердце", 15, "💝"), "gift": ("Подарок", 25, "🎁"), "rose": ("Роза", 25, "🌹"),
     "cake": ("Торт", 50, "🎂"), "bouq": ("Букет", 50, "💐"), "rocket": ("Ракета", 50, "🚀"), "champ": ("Шампанское", 50, "🍾"),
@@ -42,7 +40,7 @@ def _fixed(cid, title, price, spec):
     prizes = [dict(k=k, name=ITEMS[k][0], value=ITEMS[k][1], ic=ITEMS[k][2], w=round(w * 1000)) for k, w in pairs]
     t = sum(p["w"] for p in prizes)
     return dict(id=cid, name=title, price=price, prizes=prizes, total=t,
-                rtp=round(sum(p["value"] * p["w"] for p in prizes) / t / price, 3))
+                rtp=round(sum(p["value"] * p["w"] for p in prizes) / t / price, 3) if price else 0)
 
 def _build(cid, title, price, keys):
     vals = [ITEMS[k][1] for k in keys]
@@ -60,18 +58,10 @@ def _build(cid, title, price, keys):
 CATALOG = {c[0]: _build(c[0], c[1], c[2], c[3].split()) for c in CASES}
 CATALOG.update({c[0]: _fixed(*c) for c in FIXED})
 
-# --- НАГРАДЫ ДЛЯ ЕЖЕДНЕВНОГО КЕЙСА ---
-DAILY_PRIZES = [
-    dict(k="cup", name="Кубок", value=100, ic="🏆", w=4000),
-    dict(k="ring", name="Кольцо", value=100, ic="💍", w=2000),
-    dict(k="dia", name="Алмаз", value=100, ic="💎", w=1500),
-    dict(k="sbear", name="Static-мишка", value=100, ic="🐻", w=1000),
-    dict(k="lolly", name="Леденец", value=800, ic="🍭", w=700),
-    dict(k="box", name="Подарок 2025", value=1000, ic="📦", w=400),
-    dict(k="eskimo", name="Эскимо", value=2000, ic="🍦", w=200),
-    dict(k="fist", name="Золотой кулак", value=2888, ic="💪", w=100),
-    dict(k="book", name="Книга", value=3000, ic="📕", w=50),
-]
+import os
+DAILY_COOLDOWN_MS = 24 * 3600 * 1000
+DAILY_MIN_DEP = int(os.environ.get("DAILY_MIN_DEP", "0") or 0)   # сколько нужно пополнить, чтобы открывать ежедневный кейс (0 = всем)
+DAILY = _fixed("daily", "Ежедневный", 0, "bear:30 heart:30 gift:14 rose:10 cake:6 cup:4 dia:3 lolly:2 box:1")
 
 def setup(app, auth, db, tx, lock, PG, gate=lambda uid: None):
     big = "BIGINT" if PG else "INTEGER"
@@ -88,47 +78,62 @@ def setup(app, auth, db, tx, lock, PG, gate=lambda uid: None):
                                prizes=[dict(k=p["k"], name=p["name"], value=p["value"], ic=p["ic"], p=p["w"] / c["total"]) for p in c["prizes"]])
                           for c in CATALOG.values()]}
 
-    # --- ЕЖЕДНЕВНЫЙ КЕЙС ---
-    @app.post("/api/cases/daily")
-    async def open_daily(request: Request):
-        uid = auth(request)
-        row = db.execute("SELECT daily_ts FROM users WHERE id=?", (uid,)).fetchone()
-        last_ts = row["daily_ts"] if row and "daily_ts" in row.keys() else 0
-        now = int(time.time())
-        
-        if uid != OWNER_ID and now - last_ts < 86400:
-            raise HTTPException(400, "Ежедневный кейс будет доступен позже")
-            
-        if uid != OWNER_ID:
-            db.execute("UPDATE users SET daily_ts=? WHERE id=?", (now, uid))
-
-        async with lock:
-            with tx():
-                p = secrets.SystemRandom().choices(DAILY_PRIZES, weights=[x["w"] for x in DAILY_PRIZES])[0]
-                iid = secrets.token_hex(8)
-                db.execute("INSERT INTO inv(id,uid,case_id,name,value,ts) VALUES(?,?,?,?,?,?)",
-                           (iid, uid, "daily", p["name"], p["value"], int(time.time() * 1000)))
-            bal = balance(uid)
-        return {"items": [dict(id=iid, k=p["k"], name=p["name"], value=p["value"], ic=p["ic"], case="daily")], "balance": bal}
-
-    # --- ОБЫЧНЫЙ КЕЙС ---
     @app.post("/api/cases/open")
     async def open_case(request: Request):
-        uid = auth(request); c = CATALOG.get((await request.json()).get("case"))
+        uid = auth(request); j = await request.json(); c = CATALOG.get(j.get("case"))
         if not c: raise HTTPException(400, "Нет такого кейса")
+        try: n = int(j.get("n", 1))
+        except Exception: n = 1
+        if not 1 <= n <= 5: raise HTTPException(400, "Можно открыть от 1 до 5 кейсов за раз")
+        cost = c["price"] * n
         async with lock:
-            if balance(uid) < c["price"]: raise HTTPException(400, "Не хватает звёзд")
+            if balance(uid) < cost: raise HTTPException(400, "Не хватает звёзд")
             gate(uid)   # пауза между открытиями
+            items = []
             with tx():
-                cur = db.execute("UPDATE users SET balance=balance-?, played=played+1, wagered=wagered+?"
-                                 " WHERE id=? AND balance>=?", (c["price"], c["price"], uid, c["price"]))
+                cur = db.execute("UPDATE users SET balance=balance-?, played=played+?, wagered=wagered+?"
+                                 " WHERE id=? AND balance>=?", (cost, n, cost, uid, cost))
                 if cur.rowcount == 0: raise HTTPException(400, "Не хватает звёзд")
-                p = secrets.SystemRandom().choices(c["prizes"], weights=[x["w"] for x in c["prizes"]])[0]
-                iid = secrets.token_hex(8)
-                db.execute("INSERT INTO inv(id,uid,case_id,name,value,ts) VALUES(?,?,?,?,?,?)",
-                           (iid, uid, c["id"], p["name"], p["value"], int(time.time() * 1000)))
+                for _ in range(n):
+                    p = secrets.SystemRandom().choices(c["prizes"], weights=[x["w"] for x in c["prizes"]])[0]
+                    iid = secrets.token_hex(8)
+                    db.execute("INSERT INTO inv(id,uid,case_id,name,value,ts) VALUES(?,?,?,?,?,?)",
+                               (iid, uid, c["id"], p["name"], p["value"], int(time.time() * 1000)))
+                    items.append(dict(id=iid, k=p["k"], name=p["name"], value=p["value"], ic=p["ic"], case=c["id"]))
             bal = balance(uid)
-        return {"item": dict(id=iid, k=p["k"], name=p["name"], value=p["value"], ic=p["ic"], case=c["id"]), "balance": bal}
+        return {"item": items[0], "items": items, "balance": bal}
+
+    # Ежедневный бесплатный кейс: один раз в 24 часа на игрока. Шансы показываются игрокам.
+    db.execute(f"CREATE TABLE IF NOT EXISTS daily(uid {big} PRIMARY KEY, ts {big})")
+
+    def daily_left(uid):
+        r = db.execute("SELECT ts FROM daily WHERE uid=?", (uid,)).fetchone()
+        return max(0, int((r["ts"] + DAILY_COOLDOWN_MS - time.time() * 1000) / 1000)) if r else 0
+
+    @app.get("/api/daily")
+    async def daily_info(request: Request):
+        uid = auth(request)
+        return {"left": daily_left(uid), "prizes": [dict(k=p["k"], name=p["name"], value=p["value"], ic=p["ic"], p=p["w"] / DAILY["total"]) for p in DAILY["prizes"]]}
+
+    @app.post("/api/daily/open")
+    async def daily_open(request: Request):
+        uid = auth(request)
+        async with lock:
+            if DAILY_MIN_DEP:
+                u = db.execute("SELECT deposited FROM users WHERE id=?", (uid,)).fetchone()
+                if (u["deposited"] or 0) < DAILY_MIN_DEP:
+                    raise HTTPException(400, f"Ежедневный кейс откроется после пополнения на {DAILY_MIN_DEP} ⭐")
+            left = daily_left(uid)
+            if left > 0:
+                raise HTTPException(400, f"Следующий кейс через {left // 3600} ч {left % 3600 // 60} мин")
+            now = int(time.time() * 1000)
+            with tx():
+                db.execute("INSERT INTO daily(uid,ts) VALUES(?,?) ON CONFLICT(uid) DO UPDATE SET ts=excluded.ts", (uid, now))
+                p = secrets.SystemRandom().choices(DAILY["prizes"], weights=[x["w"] for x in DAILY["prizes"]])[0]
+                iid = secrets.token_hex(8)
+                db.execute("INSERT INTO inv(id,uid,case_id,name,value,ts) VALUES(?,?,?,?,?,?)", (iid, uid, "daily", p["name"], p["value"], now))
+            it = dict(id=iid, k=p["k"], name=p["name"], value=p["value"], ic=p["ic"], case="daily")
+        return {"item": it, "items": [it], "balance": balance(uid), "left": DAILY_COOLDOWN_MS // 1000}
 
     @app.get("/api/inventory")
     async def inventory(request: Request):

@@ -12,31 +12,35 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 TOKEN = os.environ["BOT_TOKEN"]
-RTP, DEP_MAX, WD_LIMIT = 0.9, 100_000, 50_000
+RTP, DEP_MAX, WD_LIMIT = 0.9, 10_000_000, 50_000
 # Все лимиты можно менять на Render (Environment) без правки кода
 def _env(name, default, cast=float): return cast(os.environ.get(name, default))
 MAX_BET   = _env("MAX_BET", 5000, int)       # максимальная ставка за раунд
 WIN_CAP   = _env("WIN_CAP", 50000, int)      # максимальный выигрыш за раунд (ставка × множитель)
 COOLDOWN  = _env("COOLDOWN", 1.0)            # пауза между ставками одного игрока, сек (против скриптов и параллельных запросов)
-OWNER_ID  = 1780245250                       # ТВОЙ ID
+OWNER_ID  = 1780245250                      # твой id в StaticGram: статистика и команды промокодов только для него
 ROLLOVER  = _env("ROLLOVER", 1.0)            # вывод открывается, когда сумма ставок >= внесённое × ROLLOVER
 def fmtn(n): return f"{int(n):,}".replace(",", " ")
 def cap_err(): return HTTPException(400, f"Максимальный выигрыш за раунд {fmtn(WIN_CAP)} ⭐. Уменьши ставку или множитель")
 def bet_err(): return HTTPException(400, f"Максимальная ставка {fmtn(MAX_BET)} ⭐")
-
+# Если бот создан не в обычном Telegram, а на своём сервере приватки,
+# задай переменную API_BASE (адрес Bot API приватки, например https://api.example.com)
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 API_BASE = os.environ.get("API_BASE", "https://api.staticgram.top").rstrip("/")
 session = AiohttpSession(api=TelegramAPIServer.from_base(API_BASE)) if API_BASE else None
 bot, dp = Bot(TOKEN, session=session), Dispatcher()
-
+# --- База данных ---
+# DATABASE_URL задан  -> Postgres (бесплатные Neon / Supabase), данные не пропадают
+# DATABASE_URL пуст   -> файл SQLite (на бесплатном Render он стирается при перезапуске!)
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 PG = DATABASE_URL.startswith("postgres")
 if PG:
     import psycopg
     from psycopg.rows import dict_row
     def _connect():
-        return psycopg.connect(DATABASE_URL, autocommit=True, row_factory=dict_row, connect_timeout=10, prepare_threshold=None)
+        return psycopg.connect(DATABASE_URL, autocommit=True, row_factory=dict_row, connect_timeout=10,
+                              prepare_threshold=None)   # без кэша планов: иначе после обновления таблиц бывает «cached plan must not change result type»
 else:
     import sqlite3
     def _connect():
@@ -52,6 +56,8 @@ class DB:
             try:
                 return self.c.execute(sql, params)
             except Exception as e:
+                # соединение с облачной базой могло закрыться: переподключаемся и повторяем,
+                # но НЕ внутри транзакции, иначе запрос мог бы примениться дважды
                 if PG and attempt == 0 and not self.in_tx and isinstance(e, (psycopg.OperationalError, psycopg.InterfaceError)):
                     self.c = _connect(); continue
                 raise
@@ -68,19 +74,22 @@ for stmt in (
     f"CREATE TABLE IF NOT EXISTS ops(n {SERIAL}, uid {INT}, k TEXT, a {INT}, b {INT}, p {INT}, x {REAL},"
     f" g TEXT, cid TEXT UNIQUE, ts {INT})",
     "CREATE INDEX IF NOT EXISTS ops_uid ON ops(uid, n)",
+    f"CREATE TABLE IF NOT EXISTS hub_users(id {INT} PRIMARY KEY, first_seen {INT}, last_seen {INT})",
     f"CREATE TABLE IF NOT EXISTS promos(code TEXT PRIMARY KEY, amount {INT}, max_uses {INT}, used {INT} DEFAULT 0, active {INT} DEFAULT 1, created {INT})",
     f"CREATE TABLE IF NOT EXISTS promo_uses(code TEXT, uid {INT}, ts {INT}, PRIMARY KEY(code, uid))",
-    f"CREATE TABLE IF NOT EXISTS hub_users(id {INT} PRIMARY KEY, first_seen {INT}, last_seen {INT})",
 ):
     db.execute(stmt)
 
-try:   # бонусные звёзды от промокодов
+try:   # бонусные звёзды от промокодов (для условия по обороту при выводе)
     db.execute(f"ALTER TABLE users ADD COLUMN bonus {INT} DEFAULT 0")
 except Exception:
     pass
 
-try:   # колонка для ежедневного кейса
-    db.execute(f"ALTER TABLE users ADD COLUMN daily_ts {INT} DEFAULT 0")
+# Мины удалены: возвращаем ставки незаконченных игр и убираем таблицу
+try:
+    for r in db.execute("SELECT uid, bet FROM mines").fetchall():
+        db.execute("UPDATE users SET balance=balance+? WHERE id=?", (r["bet"], r["uid"]))
+    db.execute("DROP TABLE mines")
 except Exception:
     pass
 
@@ -91,7 +100,7 @@ def tx():
         yield
     except BaseException:
         try: db.execute("ROLLBACK")
-        except Exception: db.c = _connect()
+        except Exception: db.c = _connect()   # связь оборвалась: открытая транзакция всё равно откатится на стороне базы
         raise
     else:
         db.execute("COMMIT")
@@ -100,7 +109,7 @@ def tx():
 
 lock = asyncio.Lock()
 
-seen = {}   # когда игрок последний раз обращался к серверу
+seen = {}   # когда игрок последний раз обращался к серверу (для счётчика онлайна)
 def online():
     now = time.time()
     for k in [k for k, v in seen.items() if now - v > 300]: del seen[k]
@@ -117,17 +126,13 @@ def auth(request: Request) -> int:
     uid = json.loads(d["user"])["id"]
     seen[uid] = time.time()
     db.execute("INSERT INTO users(id) VALUES(?) ON CONFLICT DO NOTHING", (uid,))
-    
-    now = int(time.time())
-    if db.execute("SELECT 1 FROM hub_users WHERE id=?", (uid,)).fetchone():
-        db.execute("UPDATE hub_users SET last_seen=? WHERE id=?", (now, uid))
-    else:
-        db.execute("INSERT INTO hub_users(id, first_seen, last_seen) VALUES(?,?,?)", (uid, now, now))
-        
+    nowms = int(time.time() * 1000)
+    db.execute("INSERT INTO hub_users(id,first_seen,last_seen) VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET last_seen=excluded.last_seen", (uid, nowms, nowms))
     return uid
 
-last_bet = {}
+last_bet = {}   # когда игрок делал последнюю ставку
 def gate(uid):
+    """Не чаще одной ставки в COOLDOWN секунд на игрока: останавливает скрипты и пачки параллельных запросов."""
     now = time.monotonic()
     if now - last_bet.get(uid, 0) < COOLDOWN: raise HTTPException(429, "Не так быстро, подожди секунду")
     last_bet[uid] = now
@@ -139,13 +144,9 @@ def state(uid):
     ops = [dict(k=r["k"], a=r["a"], b=r["b"], p=r["p"], x=r["x"], g=r["g"], id=r["cid"], ts=r["ts"])
            for r in db.execute("SELECT * FROM ops WHERE uid=? ORDER BY n DESC LIMIT 100", (uid,))]
     today = time.strftime("%Y-%m-%d")
-    
-    daily_ts = u["daily_ts"] if u and "daily_ts" in u.keys() else 0
-    daily_left = max(0, 86400 - (int(time.time()) - (daily_ts or 0)))
-    
     return dict(balance=u["balance"], deposited=u["deposited"], withdrawn=u["withdrawn"], wonTotal=u["won_total"],
                 played=u["played"], won=u["won"], wagered=u["wagered"], best=u["best"], bonus=u["bonus"] or 0, ops=ops,
-                wd=dict(d=u["wd_day"] or today, u=u["wd_used"] if u["wd_day"] == today else 0), daily_left=daily_left)
+                wd=dict(d=u["wd_day"] or today, u=u["wd_used"] if u["wd_day"] == today else 0))
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_headers=["*"], allow_methods=["*"])
@@ -162,7 +163,7 @@ async def _h(_, e): return JSONResponse({"error": e.detail}, e.status_code)
 async def health(): return {"ok": True}
 
 @app.api_route("/", methods=["GET", "HEAD"])
-async def index(): return FileResponse("index.html")
+async def index(): return FileResponse("index.html")  # мини-апп отдаётся с этого же сервера
 
 @app.get("/api/state")
 async def get_state(request: Request):
@@ -173,10 +174,10 @@ async def get_state(request: Request):
 async def get_stats(request: Request):
     uid = auth(request)
     if uid != OWNER_ID: raise HTTPException(403, "Нет доступа")
-    now = int(time.time())
-    total = db.execute("SELECT COUNT(*) c FROM hub_users").fetchone()["c"]
-    today_start = int(time.mktime(time.localtime()[:3] + (0, 0, 0, 0, 0, -1)))
-    today = db.execute("SELECT COUNT(*) c FROM hub_users WHERE first_seen>=?", (today_start,)).fetchone()["c"]
+    tz = 4 * 3600   # Баку (UTC+4): «сегодня» считается по местному времени
+    t = int(time.time()); day0 = ((t + tz) // 86400 * 86400 - tz) * 1000
+    total = db.execute("SELECT COUNT(*) AS c FROM hub_users").fetchone()["c"]
+    today = db.execute("SELECT COUNT(*) AS c FROM hub_users WHERE first_seen>=?", (day0,)).fetchone()["c"]
     return {"total": total, "online": online(), "today": today}
 
 @app.post("/api/deposit")
@@ -195,6 +196,7 @@ async def deposit_chat(request: Request):
         currency="XTR", prices=[LabeledPrice(label="Пополнение", amount=a)])
     return {"ok": True}
 
+# --- Вызов методов StaticGram, которых нет в aiogram (withdrawStarBalance и т.п.) ---
 async def sg_call(method, **params):
     import aiohttp
     async with aiohttp.ClientSession() as s:
@@ -210,18 +212,21 @@ WD_ERRORS = {
 
 @app.post("/api/withdraw")
 async def withdraw(request: Request):
+    """Автовывод: статики сразу отправляются игроку методом withdrawStarBalance (StaticGram)."""
     uid = auth(request); a = int((await request.json()).get("amount", 0))
-    cid = "wd" + secrets.token_hex(12); ts = int(time.time() * 1000)
+    cid = "wd" + secrets.token_hex(12); ts = int(time.time() * 1000)   # он же request_id (идемпотентность)
+    # 1) резервируем сумму на балансе игрока
     async with lock:
         s = state(uid)
         if a < 1 or a > s["balance"]: raise HTTPException(400, "Не хватает звёзд")
         if a > WD_LIMIT - s["wd"]["u"]: raise HTTPException(400, "Дневной лимит")
-        need = int((s["deposited"] + s["bonus"]) * ROLLOVER - s["wagered"] + .999)
+        need = int((s["deposited"] + s["bonus"]) * ROLLOVER - s["wagered"] + .999)   # бонусы от промокодов тоже нужно отыграть
         if need > 0: raise HTTPException(400, f"Чтобы вывести, сыграй ещё на {fmtn(need)} ⭐ ставок")
         with tx():
             db.execute("UPDATE users SET balance=balance-?, withdrawn=withdrawn+?, wd_day=?, wd_used=? WHERE id=?",
                        (a, a, s["wd"]["d"], s["wd"]["u"] + a, uid))
             db.execute("INSERT INTO ops(uid,k,a,cid,ts) VALUES(?,?,?,?,?)", (uid, "wd", a, cid, ts))
+    # 2) отправляем звёзды игроку (при сбое связи повторяем с тем же request_id — двойной выплаты не будет)
     res = None
     for _ in range(2):
         try:
@@ -229,12 +234,12 @@ async def withdraw(request: Request):
             break
         except Exception as e:
             print("WITHDRAW NET ERROR:", repr(e), flush=True)
-    if res is None:
+    if res is None:  # связь пропала: деньги не возвращаем автоматически, чтобы не выплатить дважды
         raise HTTPException(502, "Выплата в обработке. Если звёзды не пришли, напиши в поддержку")
     if not res.get("ok"):
         desc = str(res.get("description", ""))
         print("WITHDRAW FAIL:", desc, flush=True)
-        async with lock:
+        async with lock:   # выплата отклонена — возвращаем сумму на баланс игрока
             with tx():
                 db.execute(f"UPDATE users SET balance=balance+?, withdrawn=withdrawn-?, wd_used={BIGGER}(0, wd_used-?) WHERE id=?",
                            (a, a, a, uid))
@@ -250,11 +255,12 @@ def play(uid, bet, payout, x, game):
         db.execute("INSERT INTO ops(uid,k,g,b,p,x,ts) VALUES(?,?,?,?,?,?,?)", (uid, "game", game, bet, payout, x, int(time.time() * 1000)))
     return db.execute("SELECT balance FROM users WHERE id=?", (uid,)).fetchone()["balance"]
 
+# ---- Промокоды ----
 def norm_code(x):
     c = (x or "").strip().upper()
     return c if re.fullmatch(r"[\w-]{3,20}", c) else ""
 
-promo_fail = {}
+promo_fail = {}   # защита от подбора кодов: uid -> (время первой ошибки, число ошибок)
 def promo_limit(uid):
     t, n = promo_fail.get(uid, (0.0, 0))
     if time.time() - t <= 600 and n >= 5: raise HTTPException(429, "Слишком много неверных попыток. Подожди несколько минут")
@@ -285,6 +291,8 @@ async def promo(request: Request):
         bal = db.execute("SELECT balance FROM users WHERE id=?", (uid,)).fetchone()["balance"]
     return {"amount": a, "balance": bal}
 
+# ---- бот: оплата звёздами ----
+# ---- «Своё количество»: бот спрашивает сумму и присылает инвойс ----
 class Dep(StatesGroup):
     amount = State()
 
@@ -296,6 +304,8 @@ async def start_cmd(m: Message, command: CommandObject, state: FSMContext):
     else:
         await m.answer("Открой мини-апп кнопкой меню.")
 
+
+# ---- Промокоды: создание только для владельца (OWNER_ID) ----
 def is_owner(m: Message): return bool(OWNER_ID) and m.from_user is not None and m.from_user.id == OWNER_ID
 
 @dp.message(Command("myid"))
@@ -353,12 +363,20 @@ async def paid(m: Message):
         with tx():
             cur = db.execute("INSERT INTO ops(uid,k,a,cid,ts) VALUES(?,?,?,?,?) ON CONFLICT (cid) DO NOTHING",
                              (m.from_user.id, "dep", a, p.telegram_payment_charge_id, int(time.time() * 1000)))
-            if cur.rowcount == 0: return
+            if cur.rowcount == 0: return  # этот платёж уже зачислен
             db.execute("UPDATE users SET balance=balance+?, deposited=deposited+? WHERE id=?", (a, a, m.from_user.id))
     await m.answer(f"✅ Пополнение зачислено: {a} ⭐\nОткрой мини-апп, чтобы играть.")
 
 @app.on_event("startup")
 async def start(): asyncio.create_task(dp.start_polling(bot))
 
+# ---------------------------------------------------------------------------
+# Работа с API StaticGram (счета, вывод, возвраты): используй документацию
+# и библиотеку/описание методов на docs.staticgram.top
+#   Оплата и вывод: https://docs.staticgram.top/guide/payments
+#   Mini Apps:      https://docs.staticgram.top/guide/miniapps
+# ---------------------------------------------------------------------------
+
+# ---- Кейсы (файл cases.py лежит рядом) ----
 import cases
 cases.setup(app, auth, db, tx, lock, PG, gate)
