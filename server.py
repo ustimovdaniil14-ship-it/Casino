@@ -173,7 +173,7 @@ async def get_stats(request: Request):
     today = db.execute("SELECT COUNT(*) c FROM hub_users WHERE first_seen>=?", (today_start,)).fetchone()["c"]
     return {"total": total, "online": online(), "today": today}
 
-# --- КЕЙСЫ ВСТРОЕНЫ СЮДА ---
+# --- КЕЙСЫ ---
 ITEMS = {
     "bear": ("Мишка", 15, "🧸"), "heart": ("Сердце", 15, "💝"), "gift": ("Подарок", 25, "🎁"), "rose": ("Роза", 25, "🌹"),
     "cake": ("Торт", 50, "🎂"), "bouq": ("Букет", 50, "💐"), "rocket": ("Ракета", 50, "🚀"), "champ": ("Шампанское", 50, "🍾"),
