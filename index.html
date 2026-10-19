@@ -218,4 +218,863 @@ body[data-view="cases"] .app,body[data-view="inv"] .app{padding-bottom:calc(30px
 .cs-cell i{font-style:normal;font-size:34px;line-height:1.1}.cs-cell span{color:var(--mute);font-weight:500}
 .cs-win{text-align:center;margin:14px 0 6px;animation:csPop .5s cubic-bezier(.2,1.4,.4,1)}
 @keyframes csPop{from{opacity:0;transform:scale(.7)}}
-.cs-wi{width:96px;height:96px;margin:0 auto 8px;border-radius:50%;display:grid;place-items:center;font-size:48px;
+.cs-wi{width:96px;height:96px;margin:0 auto 8px;border-radius:50%;display:grid;place-items:center;font-size:48px;background:var(--s1);box-shadow:0 0 0 2px var(--r),0 0 36px -4px var(--r)}
+.cs-wn{font-family:var(--serif);font-size:28px;font-weight:700}.cs-wv{color:var(--gold);font-weight:700;margin-top:2px}
+.inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.inv-it{text-align:center;padding:14px 10px 12px;border-radius:18px;background:var(--s1);border:1px solid var(--line);border-bottom:3px solid var(--r,var(--mute));animation:csIn .35s ease both}
+.inv-it i{display:block;font-style:normal;font-size:40px;line-height:1.1}
+.inv-it b{display:block;font-size:14px;margin-top:6px}.inv-it small{display:block;color:var(--gold);font-weight:700;margin:3px 0 9px}
+.inv-it .pbtn{padding:8px;font-size:13px;width:100%}
+
+.gimg{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 5px 8px rgba(0,0,0,.38));pointer-events:none;-webkit-user-drag:none}
+.gi-e{font-size:40px;line-height:1}
+.cs-cell{width:108px;height:124px;gap:4px;padding:8px 6px 6px;grid-template-rows:1fr auto;place-content:stretch}
+.cs-cell .im{min-height:0;display:grid;place-items:center}.cs-cell .im .gimg{width:72px;height:72px}
+.cs-reel{height:144px}.cs-strip{top:10px}
+.cs-reel::before{content:"";position:absolute;left:50%;top:-1px;margin-left:-8px;border:8px solid transparent;border-top-color:var(--gold);z-index:3}
+.inv-it .im{width:84px;height:84px;margin:0 auto}
+.csp{position:fixed;inset:0;z-index:55;overflow-y:auto;overscroll-behavior:contain;background:var(--bg);transform:translateY(102%);transition:transform .34s cubic-bezier(.2,.9,.3,1);visibility:hidden}
+.csp.on{transform:none;visibility:visible}
+.csp::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(70% 40% at 50% -5%,var(--g,rgba(230,200,143,.2)),transparent 72%)}
+.csp-in{position:relative;max-width:440px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top)) 16px calc(120px + env(safe-area-inset-bottom))}
+.csp-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.csp-back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--s1);display:grid;place-items:center;font-size:18px;flex:none}
+.csp-back .ic{transform:rotate(180deg)}
+.csp-top{gap:8px}
+.csp-title{flex:1;font-family:var(--serif);font-weight:700;font-size:28px;line-height:1}
+.csp-bal{padding:9px 13px;border-radius:14px;border:1px solid var(--line2);background:var(--s1);font-weight:700;font-size:14px;white-space:nowrap}
+.csp-stage{position:relative;min-height:230px;display:grid;align-content:center;justify-items:center;text-align:center;margin:4px 0 8px}
+.csp-stage .cs-svg{width:176px;animation:csBob 3.4s ease-in-out infinite}
+.csp-stage::before{content:"";position:absolute;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,var(--g),transparent 66%)}
+.csp-sub{position:relative;color:var(--mute);font-size:13px;margin-top:6px}
+.csp-stage .cs-reel{width:100%;position:relative}
+.csp-note{text-align:center;color:var(--mute);font-size:14px;padding:12px}
+.csp-h{display:flex;align-items:baseline;justify-content:space-between;margin:18px 2px 10px;font-family:var(--serif);font-size:24px;font-weight:700}
+.csp-h small{font-family:var(--ui);font-size:12.5px;font-weight:500;color:var(--mute)}
+.csp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.pz{position:relative;border-radius:18px;padding:10px 6px 9px;text-align:center;background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.025));border:1px solid var(--line);border-bottom:3px solid var(--r,var(--mute));animation:csIn .4s ease both}
+.pz .im{width:78px;height:78px;margin:0 auto}
+.pz .pill{margin:7px auto 0;display:inline-flex;gap:4px;align-items:center;padding:4px 9px;border-radius:999px;font-weight:700;font-size:12.5px;background:rgba(230,200,143,.16);color:var(--gold)}
+.pz small{display:block;margin-top:5px;font-size:11.5px;color:var(--mute)}
+.csp-bar{position:fixed;left:0;right:0;bottom:0;z-index:2;padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(180deg,transparent,var(--bg) 40%)}
+.csp-bar .cta{max-width:408px;margin:0 auto}
+.cs-wi{width:128px;height:128px;font-size:0;background:radial-gradient(circle,var(--s2),var(--s1))}.cs-wi .gimg{width:100px;height:100px}
+.cs-win{margin:6px 0 4px}
+
+.uprow{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin:14px 0 6px}
+.uparrow{color:var(--gold);font-size:20px}
+.slot{border:1px solid var(--line);background:var(--s1);border-radius:20px;padding:12px 8px;text-align:center;min-height:172px;display:grid;justify-items:center;align-content:center;gap:6px;color:var(--text)}
+.slot .im{width:84px;height:84px}.slot .im.ph{display:grid;place-items:center;font-size:34px;color:var(--mute);border:1.5px dashed var(--line2);border-radius:20px}
+.slot b{font-size:13.5px}.slot span{color:var(--gold);font-weight:700;font-size:13px}
+.pk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px;max-height:58vh;overflow:auto}
+.pk{border:1px solid var(--line);border-bottom:3px solid var(--r,var(--mute));background:var(--s1);border-radius:16px;padding:9px 4px;text-align:center;color:var(--text)}
+.pk .im{width:66px;height:66px;margin:0 auto}.pk b{display:block;font-size:11.5px;margin-top:4px;line-height:1.2}
+.pk .pill{display:inline-block;margin-top:5px;padding:3px 8px;border-radius:999px;font-weight:700;font-size:12px;background:rgba(230,200,143,.16);color:var(--gold)}
+.pk small{display:block;margin-top:3px;font-size:11px;color:var(--mute)}
+#goUpgrade:disabled{opacity:.45}
+.snd{position:absolute;top:10px;right:10px;z-index:3;width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:var(--s1);font-size:16px}
+#v-upgrade .ugauge{width:232px;height:232px}#v-upgrade .upct{font-size:46px}#v-upgrade .stage{padding-top:18px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="gStar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6e4b8"/><stop offset="1" stop-color="#c79b57"/></linearGradient>
+  </defs>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.4l2.95 6.2 6.75.85-4.98 4.7 1.28 6.7L12 17.5l-6 3.35 1.28-6.7L2.3 9.45l6.75-.85z" fill="url(#gStar)" stroke="#7a5a28" stroke-width=".9" stroke-linejoin="round"/></symbol>
+  <symbol id="i-wheel" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.2"/><path d="M12 3v6.8M12 14.2V21M3 12h6.8M14.2 12H21M5.6 5.6l4.8 4.8M13.6 13.6l4.8 4.8M18.4 5.6l-4.8 4.8M10.4 13.6l-4.8 4.8"/></g></symbol>
+  <symbol id="i-dice" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/></g><g fill="currentColor"><circle cx="8.6" cy="8.6" r="1.4"/><circle cx="15.4" cy="8.6" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="8.6" cy="15.4" r="1.4"/><circle cx="15.4" cy="15.4" r="1.4"/></g></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></g></symbol>
+  <symbol id="i-upg" viewBox="0 0 24 24"><path d="M5 13l7-6 7 6M5 19l7-6 7 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="9" width="17" height="11" rx="2"/><path d="M12 9v11M3.5 13.5h17M12 9C11 5.5 7 5 7 7.4 7 9 12 9 12 9zM12 9c1-3.5 5-4 5-1.6C17 9 12 9 12 9z"/></g></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8l8.5-4.5L20.5 8v8.5L12 21l-8.5-4.5z"/><path d="M3.5 8L12 12.5 20.5 8M12 12.5V21"/></g></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 16V5M7 9l5-5 5 5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></g></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="app" id="app">
+  <header class="top"><button class="avbtn" id="avBtn" aria-label="Профиль"><div class="avatar" id="avTop"></div></button><div class="wallet dbal"><small>Баланс<span class="online" id="onl" hidden><i></i><b id="onN" style="font-weight:600">0</b> онлайн</span></small><div><svg class="ic"><use href="#i-star"/></svg><span class="balv">0</span></div></div><button class="plus" data-open="dep"><svg class="ic"><use href="#i-plus"/></svg>Пополнить</button></header>
+  <nav class="seg" id="nav">
+      <button data-v="cases" class="on"><svg class="ic"><use href="#i-gift"/></svg>Кейсы</button>
+      <button data-v="inv"><svg class="ic"><use href="#i-box"/></svg>Инвентарь</button>
+      <button data-v="upgrade"><svg class="ic"><use href="#i-upg"/></svg>Апгрейд</button>
+      <button data-v="profile"><svg class="ic"><use href="#i-user"/></svg>Профиль</button>
+    </nav>
+  <div class="testbar" id="testbar" hidden>Тестовый режим: пополнение и вывод проходят без реальных платежей, всё хранится на этом телефоне</div>
+
+  <!-- КОЛЕСО -->
+  <section class="view" id="v-wheel">
+    <div class="strip" id="whStrip"></div>
+    <div class="stage" id="stWheel">
+      <div class="wheel-wrap" id="wheelWrap">
+        <div class="ring"></div>
+        <div id="leds"></div>
+        <div class="pin"><svg viewBox="0 0 34 44"><defs><linearGradient id="gPin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0d9a8"/><stop offset="1" stop-color="#f0d9a8"/></linearGradient></defs><path d="M17 43C17 43 3 27 3 16a14 14 0 0128 0c0 11-14 27-14 27z" fill="url(#gPin)" stroke="#0c0d12" stroke-width="2.2"/><circle cx="17" cy="16" r="5.5" fill="#0c0d12"/></svg></div>
+        <div class="wheelbox"><canvas id="wheel" width="640" height="640"></canvas></div>
+        <div class="hub"><svg class="ic"><use href="#i-star"/></svg></div>
+      </div>
+      <div class="result" id="rWheel">Выбери множитель и крути</div>
+    </div>
+    <div class="lockable">
+      <div class="chips x-chips" style="margin:0 0 10px"><button data-x="2">x2</button><button data-x="3">x3</button><button data-x="5">x5</button><button data-x="10">x10</button><button data-x="25">x25</button><button data-x="100">x100</button></div>
+      <div class="mulcard">
+        <div><div class="cap">Множитель</div><div class="field"><span class="x">x</span><input id="xInput" type="number" inputmode="decimal" step="0.5" min="2" max="100"></div></div>
+        <div class="mulside"><div class="info"><span>Шанс</span><b id="chance">–</b></div><div class="info"><span>Приз</span><b>⭐ <span id="prize">0</span></b></div></div>
+      </div>
+    </div>
+    <div class="hint">Чем выше множитель, тем меньше шанс. Шанс = 90% ÷ множитель.</div>
+    <div class="dock">
+      
+      <div class="dock-bet">
+        <label class="betbox"><svg class="ic"><use href="#i-star"/></svg><input class="bet-input" type="number" inputmode="numeric" min="1"></label>
+        <div class="quick bet-chips"><button data-v="100"><svg class="ic"><use href="#i-star"/></svg>100</button><button data-v="500"><svg class="ic"><use href="#i-star"/></svg>500</button><button data-act="max">MAX</button></div>
+      </div>
+      <button class="cta" id="goWheel"><svg class="ic"><use href="#i-play"/></svg><span>Крутить</span></button>
+    </div>
+  </section>
+
+  <!-- АПГРЕЙДЕР -->
+  <section class="view" id="v-upgrade">
+    <div class="stage" id="stUp">
+      <button class="snd" id="upSnd" type="button"></button>
+      <div class="ugauge">
+        <svg class="ring2" viewBox="0 0 280 280">
+          <circle cx="140" cy="140" r="136" fill="none" stroke="rgba(230,200,143,.28)" stroke-width="1"/>
+          <circle cx="140" cy="140" r="132" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="5" stroke-dasharray="2 8.25"/>
+          <circle cx="140" cy="140" r="100" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+          <circle cx="140" cy="140" r="118" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="22"/>
+          <circle id="upArc" cx="140" cy="140" r="118" fill="none" stroke="#57c99b" stroke-width="22" stroke-dasharray="0 742" transform="rotate(-90 140 140)"/>
+        </svg>
+        <div class="upcenter">
+          <div class="upct" id="upPct">—</div>
+          <div class="uptier" id="upTier">выбери подарки</div>
+          <div class="upmul" id="upInfo"></div>
+        </div>
+        <div class="needle" id="upNeedle"></div>
+      </div>
+      <div class="result" id="rUp">Выбери свой подарок и тот, что хочешь получить</div>
+    </div>
+    <div class="uprow">
+      <button class="slot" id="upSrc"></button>
+      <div class="uparrow">➜</div>
+      <button class="slot" id="upDst"></button>
+    </div>
+    <div class="hint">Чем дороже подарок, который хочешь получить, тем ниже шанс. Если не повезло, твой подарок сгорает.</div>
+    <div class="dock"><button class="cta" id="goUpgrade"><svg class="ic"><use href="#i-upg"/></svg><span>Апгрейд</span></button></div>
+  </section>
+
+  <!-- КЕЙСЫ -->
+  <section class="view on" id="v-cases">
+    <div class="cs-head"><div class="cs-t">Кейсы</div><div class="cs-s">Шансы открыты, игроку возвращается около 86%</div></div>
+    <div id="csCases" class="cs-grid"></div>
+  </section>
+
+  <!-- ИНВЕНТАРЬ -->
+  <section class="view" id="v-inv">
+    <div class="cs-head"><div class="cs-t">Инвентарь</div><div class="cs-s" id="invSum"></div></div>
+    <div id="invList" class="inv-grid"></div>
+    <div id="invAct"></div>
+  </section>
+
+    <!-- ПРОФИЛЬ -->
+  <section class="view" id="v-profile">
+    <button class="pback" id="pBack"><svg class="ic"><use href="#i-chev"/></svg>к кейсам</button>
+    <div class="pass">
+      <div class="avatar" id="avBig"></div>
+      <div><div class="pn" id="nmBig"></div><div class="un" id="unBig"></div></div>
+    </div>
+    <div class="bigbal"><svg class="ic"><use href="#i-star"/></svg><span id="pBal">0</span><small>на счету</small></div>
+    <div class="acts">
+      <button class="pbtn main" id="wDep"><svg class="ic"><use href="#i-down"/></svg>Пополнить</button>
+      <button class="pbtn" id="wWd"><svg class="ic"><use href="#i-up"/></svg>Вывести</button>
+    </div>
+    <button class="pbtn" id="wPromo" style="width:100%;margin-bottom:6px"><svg class="ic"><use href="#i-gift"/></svg>Промокод</button>
+    
+    <!-- БЛОК СТАТИСТИКИ (ПОЯВИТСЯ ТОЛЬКО У ТЕБЯ) -->
+    <div class="sec" id="statsSec" hidden>Статистика</div>
+    <div id="statsBox" hidden style="margin-bottom: 20px;"></div>
+    <!-- КОНЕЦ БЛОКА СТАТИСТИКИ -->
+
+    <div class="sec">Звёзды</div>
+    <div class="lg"><span>Внесено</span><i></i><b>⭐ <span id="sDep">0</span></b></div>
+    <div class="lg"><span>Выведено</span><i></i><b>⭐ <span id="sWd">0</span></b></div>
+    <div class="lg"><span>Выиграно</span><i></i><b>⭐ <span id="sWon">0</span></b></div>
+    <div class="sec">Последние операции</div>
+    <div class="oplist" id="pOps"></div>
+    <button class="more" id="wOps">вся история →</button>
+    <div id="pStats" hidden></div>
+  </section>
+</div>
+
+<div class="csp" id="csp"><div class="csp-in" id="cspIn"></div><div class="csp-bar" id="cspBar"></div></div>
+<div class="sheet-back" id="sheetBack"></div>
+<div class="sheet" id="sheet"><div class="grab"></div><div id="sheetBody"></div></div>
+<div class="toast" id="toast"></div>
+
+
+<script>
+/* ============ НАСТРОЙКИ ============
+   API_URL пустой  -> тестовый режим: баланс, пополнение и вывод считаются на телефоне, без реальных платежей.
+   API_URL заполнен -> игры, пополнение и вывод идут через твой сервер (см. функции api* ниже). */
+const CFG = { BOT: 'PavelBot', API_URL: '/api' }; // впиши адрес сервера; пустая строка = тестовый режим
+const REMOTE = !!CFG.API_URL;
+const MAX_BET = 5000, DEP_MAX = 100000, WD_LIMIT = 50000, RTP = 0.9;
+const DEP_CHIPS = [100, 500, 1000, 5000, 10000, 25000, 50000, 100000];
+
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) { try { tg.ready(); tg.expand(); tg.setHeaderColor('#0c0d12'); tg.setBackgroundColor('#0c0d12'); if (tg.disableVerticalSwipes) tg.disableVerticalSwipes(); } catch (e) {} }
+
+const $ = id => document.getElementById(id);
+const fmt = n => Math.floor(n + 1e-9).toLocaleString('ru-RU');
+const fx = x => String(Math.round(x * 100) / 100);
+const ICON = { wheel: 'i-wheel', dice: 'i-dice', upgrade: 'i-upg' };
+const todayKey = () => new Date().toISOString().slice(0, 10);
+const pad = n => String(n).padStart(2, '0');
+function fdate(ts, sec) { const d = new Date(ts); return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}` + (sec ? ':' + pad(d.getSeconds()) : ''); }
+function rid() { const a = new Uint8Array(18); crypto.getRandomValues(a); return 'st' + Array.from(a, b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join(''); }
+
+/* ---------- состояние ---------- */
+function load() {
+  const base = { balance: 0, deposited: 0, withdrawn: 0, wonTotal: 0, played: 0, won: 0, wagered: 0, best: 0, ops: [], wh: [], wd: { d: '', u: 0 } };
+  try { const s = JSON.parse(localStorage.getItem('hub_state_v2')); if (s && typeof s.balance === 'number') return Object.assign(base, s); } catch (e) {}
+  return base;
+}
+let S = load();
+let lastDep = S.deposited || 0, waitingDep = false;
+function save() { if (REMOTE) return; try { localStorage.setItem('hub_state_v2', JSON.stringify(S)); } catch (e) {} }
+function pushOp(o) { o.ts = Date.now(); S.ops.unshift(o); S.ops = S.ops.slice(0, 100); }
+
+const U = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null;
+const NAME = U ? ([U.first_name, U.last_name].filter(Boolean).join(' ') || 'Игрок') : 'Игрок';
+const UNAME = U && U.username ? '@' + U.username : '';
+function setAvatar(el) {
+  if (U && U.photo_url) { const i = document.createElement('img'); i.src = U.photo_url; i.alt = ''; i.onerror = () => { el.textContent = NAME[0].toUpperCase(); }; el.appendChild(i); }
+  else el.textContent = NAME[0].toUpperCase();
+}
+
+/* ---------- сервер (используется только если задан API_URL) ---------- */
+async function apiCall(path, body) {
+  const r = await fetch(CFG.API_URL + path, { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json', 'X-Init-Data': (tg && tg.initData) || '' }, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || (r.status >= 500 ? 'Сервер сейчас недоступен (' + r.status + '), подожди минуту и открой заново' : 'Ошибка запроса (' + r.status + ')'));
+  return j;
+}
+async function syncState() { if (!REMOTE) return; try { const r = await apiCall('/state'); Object.assign(S, r.state); setOnline(r.online); lastDep = S.deposited || 0; render(); } catch (e) { toast('Нет связи: ' + ((e && e.message) || e), true); } }
+
+/* ---------- утилиты ---------- */
+function rndInt(n) { const a = new Uint32Array(1), lim = Math.floor(4294967296 / n) * n; do { crypto.getRandomValues(a); } while (a[0] >= lim); return a[0] % n; }
+function rndFloat() { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] / 4294967296; }
+function haptic(t) { try { tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred(t); } catch (e) {} }
+function tick() { try { tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred('light'); } catch (e) {} }
+function say(el, text, cls) { el.className = 'result ' + (cls || ''); el.textContent = text; }
+let toastTimer;
+function toast(text, err) { const t = $('toast'); t.textContent = text; t.className = 'toast show' + (err ? ' err' : ''); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2400); }
+function confetti(box) {
+  const colors = ['#e6c88f', '#f4efe6', '#57c99b', '#b0364a', '#f6e4b8'];
+  for (let i = 0; i < 36; i++) {
+    const c = document.createElement('div'); c.className = 'conf'; c.style.background = colors[i % colors.length];
+    const ang = Math.random() * Math.PI * 2, dist = 90 + Math.random() * 150;
+    c.style.setProperty('--dx', Math.cos(ang) * dist + 'px'); c.style.setProperty('--dy', Math.sin(ang) * dist - 40 + 'px');
+    c.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
+    c.style.animation = `fly ${.9 + Math.random() * .6}s ease-out forwards`;
+    box.appendChild(c); setTimeout(() => c.remove(), 1700);
+  }
+}
+
+/* ---------- баланс и отрисовка ---------- */
+let shown = S.balance, tw = null, bet = 100, busy = false, view = 'cases', xVal = 2;
+function setBal(v) { document.querySelectorAll('.balv').forEach(e => e.textContent = fmt(v)); }
+function renderBalance() {
+  if (tw) cancelAnimationFrame(tw);
+  const from = shown, to = S.balance;
+  if (from === to) { setBal(to); return; }
+  const t0 = performance.now(), dur = 520;
+  (function f(t) { const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); shown = from + (to - from) * e; setBal(shown); if (k < 1) tw = requestAnimationFrame(f); else shown = to; })(t0);
+}
+function popBalance() { document.querySelectorAll('.dbal').forEach(w => { w.classList.remove('pop'); void w.offsetWidth; w.classList.add('pop'); }); }
+function wdLeft() { return Math.max(0, WD_LIMIT - (S.wd && S.wd.d === todayKey() ? S.wd.u : 0)); }
+function render() {
+  renderBalance();
+  if (!busy) {
+    $('goWheel').querySelector('span').textContent = S.balance <= 0 ? 'Пополнить баланс' : 'Крутить';
+  }
+  if (view === 'profile') renderProfile();
+}
+function setBusy(b) { busy = b; document.body.classList.toggle('busy', b); }
+
+function takeBet() {
+  if (!bet || bet < 1) { toast('Введи ставку', true); return false; }
+  if (bet > MAX_BET) { toast('Максимальная ставка ' + fmt(MAX_BET) + ' ⭐', true); return false; }
+  if (bet > S.balance) { toast('Не хватает звёзд на такую ставку', true); haptic('error'); return false; }
+  S.balance -= bet; save(); render(); return true;
+}
+/* итог раунда; srvBal — итоговый баланс от сервера */
+function settle(game, b, payout, x, srvBal) {
+  S.played++; S.wagered += b;
+  if (payout > 0) S.wonTotal += payout;
+  if (payout > b) { S.won++; S.best = Math.max(S.best, payout - b); }
+  pushOp({ k: 'game', g: game, b: b, p: payout, x: x || 0 });
+  S.balance = srvBal != null ? srvBal : S.balance + payout;
+  save(); render();
+}
+
+/* ---------- ставка ---------- */
+function setBet(v, src) {
+  bet = Math.max(1, Math.floor(v) || 1);
+  document.querySelectorAll('.bet-input').forEach(i => { if (i !== src) i.value = bet; });
+  document.querySelectorAll('.bet-chips button').forEach(b => b.classList.toggle('sel', +b.dataset.v === bet));
+  updatePrize();
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-act]');
+  if (a) { const k = a.dataset.act; if (k === 'half') setBet(bet / 2); else if (k === 'double') setBet(bet * 2); else setBet(Math.max(1, S.balance)); tick(); return; }
+  const c = e.target.closest('.bet-chips button'); if (c) { setBet(+c.dataset.v); tick(); return; }
+  const xc = e.target.closest('.x-chips button'); if (xc) { setX(+xc.dataset.x); tick(); }
+});
+document.addEventListener('input', e => {
+  if (e.target.classList.contains('bet-input')) { const v = Math.floor(+e.target.value); if (v > 0) setBet(v, e.target); }
+  else if (e.target.id === 'xInput') { const v = parseFloat(e.target.value); if (v >= 2) setX(v, true); }
+});
+document.addEventListener('change', e => { if (e.target.id === 'xInput') setX(parseFloat(e.target.value) || 2); });
+
+/* ---------- навигация ---------- */
+function setView(v) {
+  view = v; document.body.dataset.view = v;
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  if (v === 'profile') renderProfile();
+  if (v === 'cases') casesEnter();
+  if (v === 'inv') invEnter();
+  window.scrollTo(0, 0); tick();
+}
+document.querySelectorAll('#nav button').forEach(b => b.onclick = () => setView(b.dataset.v));
+
+/* ================= ШТОРКИ ================= */
+const sheetBack = $('sheetBack'), sheet = $('sheet'), sheetBody = $('sheetBody');
+function openSheet(html) { sheetBody.innerHTML = html; sheetBack.classList.add('on'); sheet.classList.add('on'); sheet.scrollTop = 0; }
+function closeSheet() { sheetBack.classList.remove('on'); sheet.classList.remove('on'); }
+sheetBack.onclick = () => { if (!csBusy) closeSheet(); };
+
+/* общий экран ввода суммы */
+function amountSheet(o) {
+  openSheet(
+    `<div class="sh-title">${o.title}</div>` +
+    (o.limitText ? `<div class="sh-row"><span>${o.label}</span><span>${o.limitText}</span></div>` : '') +
+    `<div class="amt"><svg class="ic"><use href="#i-star"/></svg><input id="aIn" type="number" inputmode="numeric" min="1" max="${o.max}" placeholder="0"><button class="max" id="aMax">MAX</button></div>` +
+    `<div class="grid4">${DEP_CHIPS.map(v => `<button data-v="${v}">${fmt(v)}</button>`).join('')}</div>` +
+    `<button class="cta ${o.gold ? 'gold' : ''}" id="aGo" disabled>${o.button}</button>` +
+    (o.custom ? `<button class="ghost" id="aCustom">✍️ Своё количество</button>` : ''));
+  if (o.custom) $('aCustom').onclick = o.custom;
+  const inp = $('aIn'), go = $('aGo');
+  const sync = () => {
+    let v = Math.floor(+inp.value) || 0; if (v > o.max) { v = o.max; inp.value = v; }
+    go.disabled = !(v >= 1);
+    sheetBody.querySelectorAll('.grid4 button').forEach(b => b.classList.toggle('sel', +b.dataset.v === v));
+  };
+  inp.oninput = sync;
+  sheetBody.querySelectorAll('.grid4 button').forEach(b => b.onclick = () => { inp.value = Math.min(o.max, +b.dataset.v); sync(); tick(); });
+  $('aMax').onclick = () => { inp.value = o.max; sync(); tick(); };
+  go.onclick = () => { const v = Math.floor(+inp.value) || 0; if (v >= 1) { go.disabled = true; o.onGo(v); } };
+  setTimeout(() => { try { inp.focus(); } catch (e) {} }, 380);
+}
+
+/* ---- пополнение ---- */
+function openDeposit() {
+  amountSheet({ title: 'Пополнение', label: 'Сумма пополнения', limitText: 'макс. ' + fmt(DEP_MAX), max: DEP_MAX, button: 'Пополнить', onGo: startDeposit, custom: customDeposit });
+}
+function customDeposit() {
+  if (!REMOTE || !tg) return toast('Доступно только в Telegram с сервером', true);
+  tg.openTelegramLink('https://t.me/' + CFG.BOT + '?start=custom');
+  setTimeout(() => { try { tg.close(); } catch (e) {} }, 300);
+}
+async function depositViaChat(a) {
+  try {
+    await apiCall('/deposit_chat', { amount: a });
+    toast('Счёт отправлен в чат с ботом. Оплати его там');
+    setTimeout(() => { try { tg.close(); } catch (e) {} }, 900);
+  } catch (e) { toast(e.message, true); openDeposit(); }
+}
+/* ---------- ожидание зачисления ---------- */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+/* тихо обновляет состояние; возвращает, на сколько выросло пополнение (-1 при ошибке связи) */
+async function pullState() {
+  try {
+    const r = await apiCall('/state'), prev = lastDep;
+    Object.assign(S, r.state); setOnline(r.online); lastDep = S.deposited || 0; render();
+    return Math.max(0, lastDep - prev);
+  } catch (e) { return -1; }
+}
+async function waitDeposit(a) {
+  waitingDep = true;
+  openSheet(`<div class="spin"></div><div class="sh-title">Зачисляем звёзды</div>` +
+    `<div class="sh-text">Платёж на <b>${fmt(a)} ⭐</b> получен. Обычно это занимает несколько секунд, иногда до пары минут.</div>`);
+  for (let i = 0; i < 20; i++) {
+    await sleep(2000);
+    const d = await pullState();
+    if (d > 0) {
+      waitingDep = false; popBalance(); haptic('success');
+      const op = (S.ops || []).find(o => o.k === 'dep');
+      if (op) openReceipt(op, 'Пополнение зачислено'); else { closeSheet(); toast('Пополнение зачислено'); }
+      return;
+    }
+  }
+  waitingDep = false;
+  openSheet(`<div class="sh-icon"><svg class="ic"><use href="#i-clock"/></svg></div><div class="sh-title">Платёж принят</div>` +
+    `<div class="sh-text">Если звёзды ещё не на балансе, ничего страшного: они придут в течение пары минут и зачислятся сами. Это окно можно закрыть и играть дальше.</div>` +
+    `<button class="cta" id="wdOk">Понятно</button>`);
+  $('wdOk').onclick = closeSheet;
+}
+async function autoSync() {
+  if (!REMOTE || busy || waitingDep) return;
+  const d = await pullState();
+  if (d > 0) { popBalance(); haptic('success'); toast('Звёзды зачислены: +' + fmt(d) + ' ⭐'); }
+}
+setInterval(autoSync, 12000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) autoSync(); });
+
+async function startDeposit(a) {
+  if (REMOTE) {
+    try {
+      const r = await apiCall('/deposit', { amount: a });
+      const onSt = async st => {
+        if (st === 'paid') await waitDeposit(a);
+        else if (st === 'failed') toast('Платёж не прошёл', true);
+        else openDeposit();
+      };
+      const slug = (r.link.match(/invoice\/([^/?#]+)/) || [])[1];
+      const variants = [r.link]; if (slug) variants.push('https://t.me/$' + slug);
+      let opened = false;
+      for (const v of variants) { try { tg.openInvoice(v, onSt); opened = true; break; } catch (e) {} }
+      if (!opened) await depositViaChat(a);
+    } catch (e) { toast(e.message, true); openDeposit(); }
+    return;
+  }
+  openSheet(
+    `<div class="sh-icon"><svg class="ic"><use href="#i-star"/></svg></div>` +
+    `<div class="sh-title">Подтверждение</div>` +
+    `<div class="sh-text">Пополнить баланс на <b>${fmt(a)} ⭐</b>?</div>` +
+    `<button class="cta gold" id="cOk">Подтвердить ⭐ ${fmt(a)}</button>` +
+    `<button class="ghost" id="cNo">Отмена</button>` +
+    `<div class="sh-note">Тестовый режим: реальные звёзды не списываются</div>`);
+  $('cNo').onclick = closeSheet;
+  $('cOk').onclick = () => {
+    S.balance += a; S.deposited += a;
+    const op = { k: 'dep', a: a, id: rid() }; pushOp(op); save(); render(); popBalance(); haptic('success');
+    openReceipt(op, 'Пополнение зачислено');
+  };
+}
+function openReceipt(op, title) {
+  openSheet(
+    `<div class="sh-icon ok"><svg class="ic"><use href="#i-check"/></svg></div>` +
+    `<div class="sh-title">${title}</div>` +
+    `<div class="rows"><div class="r"><span>Сумма</span><span>${fmt(op.a)} ⭐</span></div>` +
+    `<div class="r"><span>Чек №</span><span>${op.id}</span></div>` +
+    `<div class="r"><span>Дата</span><span>${fdate(op.ts, true)}</span></div>` +
+    `<div class="r"><span>Баланс</span><span>${fmt(S.balance)} ⭐</span></div></div>` +
+    `<button class="cta" id="rOk">Готово</button>`);
+  $('rOk').onclick = closeSheet;
+}
+
+/* ---- вывод ---- */
+function openWithdraw() {
+  if (S.balance <= 0) return toast('На балансе нет звёзд', true);
+  const left = wdLeft();
+  if (left <= 0) return toast('Дневной лимит вывода исчерпан', true);
+  amountSheet({ title: 'Вывод звёзд', label: 'Сумма вывода', limitText: '', max: Math.min(S.balance, left), button: 'Вывести', gold: true, onGo: startWithdraw });
+}
+async function startWithdraw(a) {
+  if (REMOTE) {
+    try { const r = await apiCall('/withdraw', { amount: a }); await syncState(); popBalance(); haptic('success'); openReceipt(r.op, 'Заявка на вывод создана'); }
+    catch (e) { toast(e.message, true); closeSheet(); }
+    return;
+  }
+  if (a > S.balance || a > wdLeft()) return toast('Недоступная сумма', true);
+  S.balance -= a; S.withdrawn += a;
+  const d = todayKey(); S.wd = { d: d, u: (S.wd && S.wd.d === d ? S.wd.u : 0) + a };
+  const op = { k: 'wd', a: a, id: rid() }; pushOp(op); save(); render(); haptic('success');
+  openReceipt(op, 'Вывод оформлен');
+}
+
+/* ---- промокод ---- */
+const DEMO_PROMOS = { DEMO500: 500, START: 100 };   // только для демо-версии; на сервере коды создаёт владелец командой бота
+function openPromo() {
+  openSheet(
+    `<div class="sh-icon"><svg class="ic"><use href="#i-gift"/></svg></div><div class="sh-title">Промокод</div>` +
+    `<div class="sh-text">Введи промокод, чтобы получить бонусные звёзды.</div>` +
+    `<div class="amt"><input id="pIn" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="КОД" style="text-transform:uppercase;letter-spacing:.06em;font-size:28px"></div>` +
+    `<button class="cta" id="pGo" disabled><span>Активировать</span></button>` +
+    (REMOTE ? '' : `<div class="sh-note">Демо: попробуй DEMO500</div>`));
+  const inp = $('pIn'), go = $('pGo');
+  inp.oninput = () => { go.disabled = inp.value.trim().length < 3; };
+  inp.onkeydown = e => { if (e.key === 'Enter' && !go.disabled) go.click(); };
+  go.onclick = () => activatePromo(inp.value);
+  setTimeout(() => { try { inp.focus(); } catch (e) {} }, 380);
+}
+async function activatePromo(raw) {
+  const code = String(raw || '').trim().toUpperCase();
+  if (code.length < 3) return toast('Введи промокод', true);
+  const go = $('pGo'); if (go) go.disabled = true;
+  try {
+    let amount;
+    if (REMOTE) { const r = await apiCall('/promo', { code: code }); amount = r.amount; await syncState(); }
+    else {
+      const a = DEMO_PROMOS[code]; if (!a) throw new Error('Промокод не найден');
+      S.promos = S.promos || []; if (S.promos.includes(code)) throw new Error('Ты уже активировал этот промокод');
+      S.promos.push(code); S.balance += a; amount = a; pushOp({ k: 'promo', a: a, g: code, id: rid() }); save(); render();
+    }
+    popBalance(); haptic('success');
+    openSheet(`<div class="sh-icon ok"><svg class="ic"><use href="#i-check"/></svg></div><div class="sh-title">Промокод активирован</div>` +
+      `<div class="sh-text">Начислено <b>+${fmt(amount)} ⭐</b></div><button class="cta" id="pOk">Играть</button>`);
+    $('pOk').onclick = closeSheet;
+  } catch (e) { toast(e.message, true); if (go) go.disabled = false; }
+}
+
+/* ---- история операций ---- */
+function opRow(o) {
+    let icon, cls, title, sub = fdate(o.ts), amt, ac;
+    if (o.k === 'promo') { icon = 'i-gift'; cls = 'promo'; title = 'Промокод ' + (o.g || ''); amt = '+' + fmt(o.a); ac = 'w'; }
+    else if (o.k === 'dep') { icon = 'i-down'; cls = 'dep'; title = 'Пополнение'; amt = '+' + fmt(o.a); ac = 'w'; }
+    else if (o.k === 'wd') { icon = 'i-up'; cls = 'wd'; title = 'Вывод'; amt = '−' + fmt(o.a); ac = 'n'; }
+    else {
+      const d = o.p - o.b; icon = ICON[o.g] || 'i-star'; cls = ''; title = o.g === 'wheel' ? 'Колесо x' + fx(o.x) : o.g === 'upgrade' ? 'Апгрейд x' + fx(o.x) : o.g === 'roll' ? 'Рулетка ' + Math.round(90 / o.x) + '%' : 'Кубик';
+      amt = d > 0 ? '+' + fmt(d) : d === 0 ? '0' : '−' + fmt(-d); ac = d > 0 ? 'w' : d === 0 ? 'n' : 'l'; sub = 'ставка ' + fmt(o.b) + ' · ' + sub;
+    }
+    return `<div class="op"><div class="gi ${cls}"><svg class="ic"><use href="#${icon}"/></svg></div><div class="t">${title}<small>${sub}</small></div><div class="r ${ac}">${amt} ⭐</div></div>`;
+}
+function openOps() {
+  const rows = S.ops.map(opRow).join('');
+  openSheet(`<div class="sh-title">История операций</div><div class="oplist">${rows || '<div class="empty">Пока пусто</div>'}</div><button class="ghost" id="oClose">Закрыть</button>`);
+  $('oClose').onclick = closeSheet;
+}
+
+document.addEventListener('click', e => { if (e.target.closest('[data-open="dep"]')) openDeposit(); });
+$('avBtn').onclick = () => setView('profile');
+$('pBack').onclick = () => setView('cases');
+$('wDep').onclick = openDeposit;
+$('wWd').onclick = openWithdraw;
+$('wOps').onclick = openOps;
+$('wPromo').onclick = openPromo;
+
+/* ================= КОЛЕСО ================= */
+/*LAYOUT*/
+function layoutFor(x) {
+  const p = RTP / x; let best = null;
+  for (let N = 24; N <= 120; N++) {
+    let k = Math.round(N * p); k = Math.min(N - 1, Math.max(1, k));
+    const err = Math.abs(k / N - p);
+    if (!best || err < best.err - 1e-9) best = { N: N, k: k, err: err };
+    if (err < 0.003) { best = { N: N, k: k, err: err }; break; }
+  }
+  const N = best.N, k = best.k, mask = new Array(N).fill(false);
+  for (let j = 0; j < k; j++) mask[Math.floor((j + .5) * N / k)] = true;
+  const win = [], lose = [];
+  mask.forEach((m, i) => (m ? win : lose).push(i));
+  return { N: N, mask: mask, win: win, lose: lose };
+}
+/*END*/
+
+let WH = null, wheelRot = 0, layoutRaf = 0;
+const wheelEl = $('wheel');
+
+(function buildLeds() {
+  const box = $('leds'), n = 40, r = 155 + 4;
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('i'); d.className = 'led';
+    const t = `rotate(${i * 360 / n}deg) translateY(-${r - 6}px)`;
+    d.style.setProperty('--t', t); d.style.transform = t; d.style.animationDelay = (i * 0.045) + 's';
+    box.appendChild(d);
+  }
+})();
+
+function drawWheel() {
+  const cv = wheelEl, c = cv.getContext('2d'), W = cv.width, cx = W / 2, R = W / 2;
+  c.clearRect(0, 0, W, W);
+  const N = WH.N, step = 2 * Math.PI / N;
+  for (let i = 0; i < N; i++) {
+    const a0 = -Math.PI / 2 + i * step, a1 = a0 + step, win = WH.mask[i];
+    c.beginPath(); c.moveTo(cx, cx); c.arc(cx, cx, R, a0, a1); c.closePath();
+    c.fillStyle = win ? '#e6c88f' : (i % 2 ? '#14151c' : '#1c1d27');
+    c.fill(); c.strokeStyle = 'rgba(255,255,255,.07)'; c.lineWidth = 2; c.lineJoin = 'round'; c.stroke();
+    const arc = .72 * R * step;
+    c.save(); c.translate(cx, cx); c.rotate((a0 + a1) / 2); c.translate(R * .74, 0);
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    if (win) {
+      const size = Math.min(34, arc * .8);
+      if (size >= 9) { c.fillStyle = '#2a1d0a'; c.font = `800 ${size}px Onest, sans-serif`; c.fillText('x' + fx(xVal), 0, 0); }
+    } else if (arc > 16) { c.fillStyle = 'rgba(255,255,255,.13)'; c.font = `700 ${Math.min(24, arc * .6)}px Onest, sans-serif`; c.fillText('✕', 0, 0); }
+    c.restore();
+  }
+}
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { try { drawWheel(); } catch (e) {} });
+function rebuildWheel() {
+  WH = layoutFor(xVal);
+  wheelEl.style.transition = 'none';
+  wheelRot = ((wheelRot % 360) + 360) % 360;
+  wheelEl.style.transform = `rotate(${wheelRot}deg)`;
+  drawWheel(); void wheelEl.offsetWidth; wheelEl.style.transition = '';
+}
+function setX(v, fromInput) {
+  xVal = Math.min(100, Math.max(2, Math.round(v * 100) / 100));
+  if (!fromInput) $('xInput').value = xVal;
+  document.querySelectorAll('.x-chips button').forEach(b => b.classList.toggle('sel', +b.dataset.x === xVal));
+  updatePrize();
+  cancelAnimationFrame(layoutRaf); layoutRaf = requestAnimationFrame(() => { if (!busy) rebuildWheel(); });
+}
+function updatePrize() {
+  const pct = RTP / xVal * 100;
+  $('chance').textContent = (pct >= 10 ? Math.round(pct) : pct.toFixed(1)) + '%';
+  $('prize').textContent = fmt(bet * xVal);
+  updateUpgrade();
+}
+function renderStrip() {
+  $('whStrip').innerHTML = S.wh.slice(0, 7).map(h => h.w ? `<b class="w">x${fx(h.x)}</b>` : `<b class="l">0</b>`).join('');
+}
+
+$('goWheel').onclick = async () => {
+  if (busy) return;
+  if (S.balance <= 0) return openDeposit();
+  if (!takeBet()) return;
+  setBusy(true); $('goWheel').disabled = true; $('goWheel').querySelector('span').textContent = 'Крутим…';
+  const b = bet, x = xVal; let win, srvBal = null;
+  if (REMOTE) {
+    try { const r = await apiCall('/wheel', { bet: b, x: x }); win = r.win; srvBal = r.balance; }
+    catch (e) { S.balance += b; setBusy(false); $('goWheel').disabled = false; render(); toast(e.message, true); return; }
+  } else win = rndFloat() < RTP / x;
+  const list = win ? WH.win : WH.lose, n = list[rndInt(list.length)], step = 360 / WH.N;
+  const target = -(n + .5) * step + (Math.random() - .5) * step * .7;
+  wheelRot = Math.ceil((wheelRot + 360 * 4 - target) / 360) * 360 + target;
+  say($('rWheel'), 'Крутим…'); $('stWheel').classList.add('spinning');
+  wheelEl.style.transform = `rotate(${wheelRot}deg)`;
+  const iv = setInterval(tick, 170);
+  setTimeout(() => {
+    clearInterval(iv); $('stWheel').classList.remove('spinning');
+    const r = $('rWheel');
+    if (win) {
+      const prize = Math.floor(b * x); settle('wheel', b, prize, x, srvBal);
+      say(r, `x${fx(x)} · выигрыш +${fmt(prize - b)} ⭐`, 'win'); haptic('success'); confetti($('stWheel')); popBalance();
+    } else { settle('wheel', b, 0, x, srvBal); say(r, `Не повезло · −${fmt(b)} ⭐`, 'lose'); haptic('error'); }
+    S.wh.unshift({ w: win, x: x }); S.wh = S.wh.slice(0, 12); save(); renderStrip();
+    setBusy(false); $('goWheel').disabled = false; render();
+  }, 2850);
+};
+
+/* ================= АПГРЕЙД ПОДАРКОВ ================= */
+const UP_R = 118, UP_C = 2 * Math.PI * UP_R, UP_RTP = 0.9;
+let upSrc = null, upDst = null, upRot = 0, upBusy = false;
+const upArc = $('upArc'), upRing = document.querySelector('.ugauge svg.ring2');
+const upBp = (s, d) => Math.floor(UP_RTP * s.value / d.value * 10000);
+const upOk = (s, d) => d.value > s.value && upBp(s, d) >= 200 && upBp(s, d) <= 7500;
+const slotHtml = (it, ph) => it ? `<div class="im">${gi(it.name)}</div><b>${it.name}</b><span>⭐ ${fmt(it.value)}</span>` : `<div class="im ph">+</div><b>${ph}</b>`;
+function updateUpgrade() {
+  const ok = !!(upSrc && upDst && upOk(upSrc, upDst)), c = ok ? upBp(upSrc, upDst) / 10000 : 0, pct = c * 100;
+  upArc.setAttribute('stroke-dasharray', (c * UP_C).toFixed(2) + ' ' + UP_C.toFixed(2));
+  $('upPct').textContent = ok ? (pct >= 10 ? String(Math.round(pct * 10) / 10) : pct.toFixed(2)) + '%' : '—';
+  $('upPct').className = 'upct ' + (ok ? (pct >= 50 ? 'hi' : pct >= 20 ? 'mid' : 'lo') : '');
+  $('upTier').textContent = ok ? 'шанс на успех' : 'выбери подарки';
+  $('upInfo').textContent = ok ? 'x' + fx(upDst.value / upSrc.value) : '';
+  $('upSrc').innerHTML = slotHtml(upSrc, 'Твой подарок'); $('upDst').innerHTML = slotHtml(upDst, 'Что хочу получить');
+  $('goUpgrade').disabled = upBusy || !ok;
+}
+async function pickSrc() {
+  if (upBusy) return;
+  if (!(await csLoad())) return;
+  let r; try { r = await apiCall('/inventory'); } catch (e) { return toast(e.message, true); }
+  const items = r.items;
+  openSheet('<div class="sh-title">Твой подарок</div>' + (items.length ? '<div class="pk-grid">' +
+    items.map(i => `<button class="pk" data-i="${i.id}" style="--r:${rar(i.value)}"><div class="im">${gi(i.name)}</div><b>${i.name}</b><span class="pill">⭐ ${fmt(i.value)}</span></button>`).join('') + '</div>'
+    : '<div class="sh-text">Пока пусто. Открой кейс, и подарок появится здесь.</div>'));
+  sheetBody.querySelectorAll('.pk').forEach(b => b.onclick = () => { upSrc = items.find(i => i.id === b.dataset.i); if (upDst && !upOk(upSrc, upDst)) upDst = null; closeSheet(); updateUpgrade(); tick(); });
+}
+async function pickDst() {
+  if (upBusy) return;
+  if (!upSrc) return toast('Сначала выбери свой подарок', true);
+  if (!(await csLoad())) return;
+  const list = GL.filter(g => upOk(upSrc, g)).sort((a, b) => a.value - b.value);
+  openSheet('<div class="sh-title">Что хочу получить</div>' + (list.length ? '<div class="pk-grid">' +
+    list.map(g => { const p = upBp(upSrc, g) / 100; return `<button class="pk" data-k="${g.k}" style="--r:${rar(g.value)}"><div class="im">${gi(g.name)}</div><b>${g.name}</b><span class="pill">⭐ ${fmt(g.value)}</span><small>шанс ${p >= 10 ? Math.round(p * 10) / 10 : p.toFixed(1)}%</small></button>`; }).join('') + '</div>'
+    : '<div class="sh-text">Для этого подарка нет подходящих. Выбери другой.</div>'));
+  sheetBody.querySelectorAll('.pk').forEach(b => b.onclick = () => { upDst = list.find(g => g.k === b.dataset.k); closeSheet(); updateUpgrade(); tick(); });
+}
+$('upSrc').onclick = pickSrc; $('upDst').onclick = pickDst;
+
+$('goUpgrade').onclick = async () => {
+  if (upBusy || !upSrc || !upDst || !upOk(upSrc, upDst)) return;
+  SFX.init(); upBusy = true; updateUpgrade(); const btn = $('goUpgrade'); btn.querySelector('span').textContent = 'Крутим…';
+  let r; const src = upSrc, dst = upDst;
+  try { r = await apiCall('/upgrade_item', { id: src.id, target: dst.k }); }
+  catch (e) { upBusy = false; btn.querySelector('span').textContent = 'Апгрейд'; updateUpgrade(); return toast(e.message, true); }
+  const win = r.win, c = upBp(src, dst) / 10000, edge = Math.min(.012, c * .12) * 360;
+  const ang = win ? edge + rndFloat() * Math.max(.1, c * 360 - 2 * edge)
+                  : c * 360 + edge + rndFloat() * Math.max(.1, (1 - c) * 360 - 2 * edge);
+  upRot = Math.ceil((upRot + 360 * 3) / 360) * 360 - ang;
+  say($('rUp'), 'Крутим…'); $('stUp').classList.add('spinning');
+  upRing.style.transform = `rotate(${upRot}deg)`;
+  const iv = setInterval(tick, 140); let stopLoop = false, lastA = null;
+  const loop = () => { if (stopLoop) return; try { const m = new DOMMatrix(getComputedStyle(upRing).transform), a = Math.atan2(m.b, m.a) * 180 / Math.PI, k = Math.floor((a + 360) / 14); if (lastA !== null && k !== lastA) SFX.tick(); lastA = k; } catch (e) {} requestAnimationFrame(loop); };
+  requestAnimationFrame(loop);
+  setTimeout(() => {
+    stopLoop = true; clearInterval(iv); $('stUp').classList.remove('spinning');
+    if (win) { say($('rUp'), `Получилось! ${dst.name} у тебя в инвентаре`, 'win'); haptic('success'); SFX.win(dst.value); confetti($('stUp')); upSrc = r.item; }
+    else { say($('rUp'), `Не вышло, ${src.name} сгорел`, 'lose'); haptic('error'); SFX.lose(); upSrc = null; }
+    upDst = null; upBusy = false; btn.querySelector('span').textContent = 'Апгрейд'; updateUpgrade();
+  }, 2650);
+};
+setTimeout(() => { $('upSnd').textContent = sndIcon(); }, 0); $('upSnd').onclick = () => { SFX.toggle(); $('upSnd').textContent = sndIcon(); };
+updateUpgrade();
+
+function setOnline(n) { if (n) { $('onN').textContent = n; $('onl').hidden = false; } }
+
+/* ================= ПРОФИЛЬ ================= */
+function renderProfile() {
+  $('pBal').textContent = fmt(S.balance);
+  $('sDep').textContent = fmt(S.deposited); $('sWd').textContent = fmt(S.withdrawn); $('sWon').textContent = fmt(S.wonTotal);
+  const rate = S.played ? Math.round(S.won / S.played * 100) : 0;
+  const lg = (n, v) => `<div class="lg"><span>${n}</span><i></i><b>${v}</b></div>`;
+  $('pStats').innerHTML = lg('Сыграно', fmt(S.played)) + lg('Побед', fmt(S.won) + ' · ' + rate + '%') + lg('Оборот', '⭐ ' + fmt(S.wagered)) + lg('Лучший выигрыш', '⭐ ' + fmt(S.best));
+  $('pOps').innerHTML = S.ops.slice(0, 5).map(opRow).join('') || '<div class="empty">Пока пусто</div>';
+  loadStats();
+}
+
+/* ---------- старт ---------- */
+['avTop', 'avBig'].forEach(id => setAvatar($(id)));
+$('nmBig').textContent = NAME; $('unBig').textContent = UNAME;
+$('testbar').hidden = REMOTE;
+setBet(100); setX(2); rebuildWheel(); renderStrip(); render();
+/* ================= КЕЙСЫ ================= */
+let CS = null, GL = [], csBusy = false; const ICN = {};
+const THEME = {
+  start: ['#e8b98c', '#8a5a35', 'rgba(232,185,140,.22)'], silver: ['#eef2f8', '#7f8aa0', 'rgba(205,218,238,.2)'],
+  gold: ['#f8e6b8', '#b88d4f', 'rgba(230,200,143,.27)'], diamond: ['#b4f1fb', '#2f8ea3', 'rgba(110,222,242,.22)'], legend: ['#f4b0ec', '#8a3fae', 'rgba(210,120,232,.27)'],
+  platinum: ['#e2eaff', '#5a6fb5', 'rgba(150,178,255,.25)'], emperor: ['#ffd49a', '#a8322f', 'rgba(255,140,95,.27)'],
+  magnate: ['#c9f7d8', '#2f8a5c', 'rgba(110,222,160,.24)'], king: ['#fff0b8', '#c9820f', 'rgba(255,205,90,.34)']
+};
+const rar = v => v >= 6000 ? '#e6c88f' : v >= 2500 ? '#b48cf2' : v >= 700 ? '#6aa7e8' : v >= 90 ? '#57c99b' : '#9b98a6';
+const csPct = p => (p * 100).toFixed(p < .1 ? 1 : 0) + '%';
+const spark = (x, y, d) => `<path class="sp" style="animation-delay:${d}s" d="M${x} ${y - 5}l1.6 3.4 3.4 1.6-3.4 1.6-1.6 3.4-1.6-3.4-3.4-1.6 3.4-1.6z" fill="var(--c1)"/>`;
+function csArt(id) {
+  return `<svg class="cs-svg" viewBox="0 0 120 112"><defs><linearGradient id="gb${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--c1)"/><stop offset="1" style="stop-color:var(--c2)"/></linearGradient></defs>` +
+    `<ellipse cx="60" cy="104" rx="40" ry="6" fill="rgba(0,0,0,.35)"/><rect x="22" y="54" width="76" height="46" rx="8" fill="url(#gb${id})"/><rect x="60" y="54" width="38" height="46" rx="8" fill="rgba(0,0,0,.16)"/>` +
+    `<rect x="15" y="40" width="90" height="20" rx="7" fill="var(--c1)"/><rect x="15" y="52" width="90" height="8" rx="4" fill="rgba(0,0,0,.14)"/><rect x="53" y="40" width="14" height="60" fill="#f4efe6" opacity=".93"/>` +
+    `<path d="M60 40C38 12 12 30 44 40z" fill="#f4efe6"/><path d="M60 40C82 12 108 30 76 40z" fill="#e9dfcc"/><circle cx="60" cy="38" r="6.5" fill="#d9cdb6"/>` +
+    `<use href="#i-star" x="46" y="68" width="28" height="28"/><path d="M27 62h18" stroke="rgba(255,255,255,.4)" stroke-width="2.4" stroke-linecap="round"/>` +
+    spark(104, 30, 0) + spark(14, 24, .7) + spark(98, 76, 1.4) + `</svg>`;
+}
+async function csLoad() {
+  if (CS) return true;
+  try { const rr = await apiCall('/cases'); CS = rr.cases; GL = rr.gifts || []; CS.forEach(c => c.prizes.forEach(p => { ICN[p.name] = p.ic; KEYOF[p.name] = p.k; })); return true; }
+  catch (e) { toast(e.message, true); return false; }
+}
+async function casesEnter() {
+  if (!REMOTE) { $('csCases').innerHTML = '<div class="hint" style="grid-column:1/-1">Кейсы работают только при подключённом сервере.</div>'; return; }
+  if (!(await csLoad())) return;
+  $('csCases').innerHTML = CS.map((c, i) => { const t = THEME[c.id] || THEME.gold;
+    return `<div class="cs-card" data-c="${c.id}" style="--c1:${t[0]};--c2:${t[1]};--g:${t[2]};animation-delay:${i * 70}ms"><div class="cs-art">${csArt(c.id)}</div><b>${c.name}</b><div class="cs-up">до ⭐ ${fmt(Math.max(...c.prizes.map(p => p.value)))}</div><button class="cta"><svg class="ic"><use href="#i-star"/></svg>${fmt(c.price)}</button></div>`; }).join('');
+  $('csCases').querySelectorAll('.cs-card').forEach(el => el.onclick = () => { tick(); csOpen(el.dataset.c); });
+}
+const GIFTS = {};
+const SFX = (() => {
+  let ctx = null, on = true; try { on = localStorage.getItem('sfx') !== '0'; } catch (e) {}
+  const init = () => { try { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); } catch (e) { ctx = null; } };
+  const tone = (f, d, type, g, t0, to) => { if (!on || !ctx) return; try { const t = ctx.currentTime + (t0 || 0), o = ctx.createOscillator(), v = ctx.createGain(); o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); if (to) o.frequency.exponentialRampToValueAtTime(to, t + d); v.gain.setValueAtTime(g || .1, t); v.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(v); v.connect(ctx.destination); o.start(t); o.stop(t + d + .03); } catch (e) {} };
+  return {
+    init, get on() { return on; },
+    toggle() { on = !on; try { localStorage.setItem('sfx', on ? '1' : '0'); } catch (e) {} init(); if (on) this.tick(); return on; },
+    tick() { tone(1250, .03, 'square', .05); tone(620, .05, 'triangle', .07); },
+    win(v) { const n = v >= 6000 ? [523, 659, 784, 1047, 1319] : v >= 700 ? [523, 659, 784, 1047] : [523, 659, 784]; n.forEach((f, i) => { tone(f, .32, 'triangle', .13, i * .09); tone(f * 2, .25, 'sine', .04, i * .09); }); },
+    lose() { tone(330, .38, 'sawtooth', .07, 0, 150); },
+  };
+})();
+const sndIcon = () => SFX.on ? '🔊' : '🔇';
+
+const KEYOF = {};
+const gi = name => { const u = GIFTS[KEYOF[name]]; return u ? `<img class="gimg" src="${u}" alt="">` : `<span class="gi-e">${ICN[name] || '🎁'}</span>`; };
+const csp = $('csp');
+function csOpen(id) {
+  const c = CS.find(x => x.id === id), t = THEME[c.id] || THEME.gold;
+  csp.style.setProperty('--g', t[2]);
+  $('cspIn').innerHTML = `<div class="csp-top"><button class="csp-back" id="cspBack"><svg class="ic"><use href="#i-chev"/></svg></button><div class="csp-title">${c.name}</div><button class="csp-back" id="cspSnd" style="font-size:17px">${sndIcon()}</button><div class="csp-bal">⭐ <span id="cspBal">${fmt(S.balance)}</span></div></div>` +
+    `<div class="csp-stage" id="cspStage" style="--c1:${t[0]};--c2:${t[1]};--g:${t[2]}">${csArt('p' + c.id)}<div class="csp-sub">Шансы открыты · возврат около ${Math.round(c.rtp * 100)}% от цены</div></div>` +
+    `<div id="cspRes"></div>` +
+    `<div class="csp-h">Что может выпасть<small>${c.prizes.length} подарков</small></div><div class="csp-grid">` +
+    c.prizes.slice().sort((a, b) => b.value - a.value).map((p, i) => `<div class="pz" style="--r:${rar(p.value)};animation-delay:${Math.min(i, 12) * 30}ms"><div class="im">${gi(p.name)}</div><div class="pill">⭐ ${fmt(p.value)}</div><small>шанс ${csPct(p.p)}</small></div>`).join('') + `</div>`;
+  $('cspBar').innerHTML = `<button class="cta" id="cspGo"><svg class="ic"><use href="#i-star"/></svg><span>Открыть за ${fmt(c.price)}</span></button>`;
+  $('cspBack').onclick = () => { if (csBusy) return; csp.classList.remove('on'); };
+  $('cspGo').onclick = () => csSpin(c);
+  $('cspSnd').onclick = () => { SFX.toggle(); $('cspSnd').textContent = sndIcon(); };
+  csp.scrollTop = 0; csp.classList.add('on');
+}
+const csPick = c => { let r = Math.random(), a = 0; for (const p of c.prizes) { a += p.p; if (r < a) return p; } return c.prizes[0]; };
+async function csSpin(c) {
+  if (csBusy) return;
+  SFX.init();
+  if (S.balance < c.price) { haptic('error'); return toast('Не хватает звёзд, пополни баланс', true); }
+  csBusy = true; $('cspGo').disabled = true; $('cspRes').innerHTML = ''; csp.scrollTo({ top: 0, behavior: 'smooth' });
+  let r;
+  try { r = await apiCall('/cases/open', { case: c.id }); }
+  catch (e) { csBusy = false; $('cspGo').disabled = false; return toast(e.message, true); }
+  const W = 116, WIN = 38, cells = [];
+  for (let i = 0; i < 46; i++) cells.push(i === WIN ? c.prizes.find(p => p.name === r.item.name) : csPick(c));
+  $('cspStage').innerHTML = `<div class="cs-reel"><div class="cs-strip" id="csStrip">` +
+    cells.map(p => `<div class="cs-cell" style="--r:${rar(p.value)}"><div class="im">${gi(p.name)}</div><span>⭐ ${fmt(p.value)}</span></div>`).join('') + `</div></div>`;
+  const st = $('csStrip'), vw = st.parentElement.clientWidth, off = (Math.random() - .5) * 60;
+  const iv = setInterval(tick, 180); let done = false, lastIdx = -1;
+  const loop = () => { if (done) return; try { const m = new DOMMatrix(getComputedStyle(st).transform), idx = Math.floor((-m.m41 + vw / 2) / W); if (idx !== lastIdx) { if (lastIdx >= 0) SFX.tick(); lastIdx = idx; } } catch (e) {} requestAnimationFrame(loop); };
+  const finish = () => {
+    if (done) return; done = true;
+    clearInterval(iv); csBusy = false; $('cspGo').disabled = false; S.balance = r.balance; render(); popBalance(); haptic('success'); SFX.win(r.item.value); $('cspBal').textContent = fmt(S.balance);
+    const it = r.item;
+    $('cspRes').innerHTML = `<div class="cs-win" style="--r:${rar(it.value)}"><div class="cs-wi">${gi(it.name)}</div><div class="cs-wn">${it.name}</div><div class="cs-wv">⭐ ${fmt(it.value)}</div></div>` +
+      `<button class="cta" id="csSell" style="margin-top:10px">Продать за ${fmt(it.value)} ⭐</button><button class="pbtn" id="csKeep" style="width:100%;margin-top:10px">Оставить в инвентаре</button>`;
+    $('csSell').onclick = () => csSellIds([it.id], true);
+    $('csKeep').onclick = () => { $('cspRes').innerHTML = '<div class="csp-note">Подарок лежит в инвентаре</div>'; };
+  };
+  requestAnimationFrame(() => requestAnimationFrame(() => { st.style.transition = 'transform 5s cubic-bezier(.12,.6,.1,1)'; st.style.transform = `translateX(${-(WIN * W + W / 2 - vw / 2 + off)}px)`; }));
+  requestAnimationFrame(loop); st.addEventListener('transitionend', finish, { once: true }); setTimeout(finish, 5600);
+}
+async function csSellIds(ids, close) {
+  try {
+    const r = await apiCall('/inventory/sell', { ids: ids });
+    S.balance = r.balance; render(); popBalance(); toast('Продано: +' + fmt(r.sold) + ' ⭐');
+    if (close && $('cspRes')) { $('cspRes').innerHTML = '<div class="csp-note">Продано, звёзды на балансе</div>'; $('cspBal').textContent = fmt(S.balance); } if (view === 'inv') invEnter();
+  } catch (e) { toast(e.message, true); }
+}
+async function invEnter() {
+  if (!REMOTE) { $('invList').innerHTML = '<div class="hint" style="grid-column:1/-1">Инвентарь работает только при подключённом сервере.</div>'; return; }
+  if (!(await csLoad())) return;
+  let r; try { r = await apiCall('/inventory'); } catch (e) { return toast(e.message, true); }
+  S.balance = r.balance; render(); const tot = r.items.reduce((a, i) => a + i.value, 0);
+  $('invSum').textContent = r.items.length ? `${r.items.length} шт. на ⭐ ${fmt(tot)}` : 'Пока пусто';
+  $('invList').innerHTML = r.items.length ? r.items.map((i, k) => `<div class="inv-it" style="--r:${rar(i.value)};animation-delay:${Math.min(k, 12) * 30}ms"><div class="im">${gi(i.name)}</div><b>${i.name}</b><small>⭐ ${fmt(i.value)}</small><button class="pbtn" data-i="${i.id}">Продать</button></div>`).join('')
+    : '<div class="hint" style="grid-column:1/-1">Здесь появятся подарки из кейсов. Открой первый.</div>';
+  $('invAct').innerHTML = r.items.length ? `<button class="cta" id="invAll" style="margin-top:14px">Продать всё за ${fmt(tot)} ⭐</button>` : '';
+  $('invList').querySelectorAll('.pbtn').forEach(b => b.onclick = () => csSellIds([b.dataset.i]));
+  if (r.items.length) $('invAll').onclick = () => csSellIds(r.items.map(i => i.id));
+}
+
+async function loadStats() {
+  if (!REMOTE || !U) return;
+  try {
+    const r = await apiCall('/stats');
+    const rows = [
+      ['Всего игроков', r.total],
+      ['Онлайн', r.online],
+      ['Новых сегодня', r.today],
+    ];
+    $('statsBox').innerHTML = rows.map(([k, v]) =>
+      `<div class="lg"><span>${k}</span><i></i><b>${fmt(v)}</b></div>`).join('');
+    $('statsSec').hidden = false;
+    $('statsBox').hidden = false;
+  } catch (e) {}
+}
+
+document.body.dataset.view = 'cases';
+if (REMOTE) { syncState(); casesEnter(); }
+setInterval(render, 60000);
+</script>
+</body>
+</html>
