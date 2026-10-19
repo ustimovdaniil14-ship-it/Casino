@@ -374,7 +374,6 @@ async def open_case(request: Request, data: CaseOpenRequest):
     amount = max(1, min(5, data.amount))
     
     if cid == "daily":
-        # БЕСКОНЕЧНЫЙ КЕЙС ДЛЯ ТЕБЯ
         if uid != OWNER_ID:
             u = db.execute("SELECT daily_ts FROM users WHERE id=?", (uid,)).fetchone()
             last_ts = u["daily_ts"] if u and "daily_ts" in u.keys() else 0
@@ -383,7 +382,6 @@ async def open_case(request: Request, data: CaseOpenRequest):
                 raise HTTPException(400, "Ежедневный кейс будет доступен позже")
             db.execute("UPDATE users SET daily_ts=? WHERE id=?", (now, uid))
         
-        # --- НАГРАДЫ ДО КНИГИ ВКЛЮЧИТЕЛЬНО ---
         prizes = [
             {"k": "cup", "name": "Кубок", "value": 100, "ic": "🏆", "w": 4000},
             {"k": "ring", "name": "Кольцо", "value": 100, "ic": "💍", "w": 2000},
