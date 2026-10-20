@@ -34,10 +34,13 @@ FIXED = [
     ("king", "Король", 30000, "heartc:24 cat25:30 bear17:18 cat15:16 cap:12"),
 ]
 
+DAMP = 0.9   # в дорогих кейсах (от 5000 ⭐) шанс самых дорогих подарков (от 80% цены кейса) снижен на 10%
+def _d(price, value): return DAMP if price >= 5000 and value >= price * 0.8 else 1
+
 def _fixed(cid, title, price, spec):
     pairs = [(a.split(":")[0], float(a.split(":")[1])) for a in spec.split()]
     assert abs(sum(w for _, w in pairs) - 100) < 1e-6, cid
-    prizes = [dict(k=k, name=ITEMS[k][0], value=ITEMS[k][1], ic=ITEMS[k][2], w=round(w * 1000)) for k, w in pairs]
+    prizes = [dict(k=k, name=ITEMS[k][0], value=ITEMS[k][1], ic=ITEMS[k][2], w=round(w * 1000 * _d(price, ITEMS[k][1]))) for k, w in pairs]
     t = sum(p["w"] for p in prizes)
     return dict(id=cid, name=title, price=price, prizes=prizes, total=t,
                 rtp=round(sum(p["value"] * p["w"] for p in prizes) / t / price, 3) if price else 0)
@@ -50,7 +53,7 @@ def _build(cid, title, price, keys):
         if sum(w * v for w, v in zip(ws, vals)) / sum(ws) / price > RTP_TARGET: lo = k
         else: hi = k
     ws = [v ** -k for v in vals]; tot = sum(ws)
-    prizes = [dict(k=x, name=ITEMS[x][0], value=ITEMS[x][1], ic=ITEMS[x][2], w=max(1, round(w / tot * 100000))) for x, w in zip(keys, ws)]
+    prizes = [dict(k=x, name=ITEMS[x][0], value=ITEMS[x][1], ic=ITEMS[x][2], w=max(1, round(w / tot * 100000 * _d(price, ITEMS[x][1])))) for x, w in zip(keys, ws)]
     t = sum(p["w"] for p in prizes)
     return dict(id=cid, name=title, price=price, prizes=prizes, total=t,
                 rtp=round(sum(p["value"] * p["w"] for p in prizes) / t / price, 3))
@@ -164,7 +167,7 @@ def setup(app, auth, db, tx, lock, PG, gate=lambda uid: None):
         async with lock:
             row = db.execute("SELECT value FROM inv WHERE id=? AND uid=? AND sold=0", (iid, uid)).fetchone()
             if not row: raise HTTPException(400, "Подарок не найден")
-            bp = int(0.9 * row["value"] / val * 10000)
+            bp = int(0.81 * row["value"] / val * 10000)
             if val <= row["value"] or bp < 200 or bp > 7500:
                 raise HTTPException(400, "Выбери подарок подороже: шанс должен быть от 2% до 75%")
             gate(uid)
