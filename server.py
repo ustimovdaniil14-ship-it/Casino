@@ -87,6 +87,9 @@ except Exception:
 
 db.execute(f"CREATE TABLE IF NOT EXISTS gifts(oid TEXT PRIMARY KEY, bid TEXT, k TEXT, uid {INT}, ts {INT})")
 db.execute("CREATE INDEX IF NOT EXISTS gifts_uid ON gifts(uid, k)")
+try: db.execute("ALTER TABLE gifts ADD COLUMN st TEXT")   # st='q' = вывод в очереди (касса ещё не может передать)
+except Exception: pass
+db.execute("CREATE TABLE IF NOT EXISTS gmap(ident TEXT PRIMARY KEY, k TEXT)")   # ручное сопоставление: id/название подарка -> наш ключ
 
 # Мины удалены: возвращаем ставки незаконченных игр и убираем таблицу
 try:
@@ -376,6 +379,23 @@ VAL = {"heart": 15, "bear": 15, "gift": 25, "rose": 25, "cake": 50, "bouq": 50, 
        "statue": 10000, "car": 10000, "hat": 10500, "gring": 11000, "watch": 12000, "book": 12500, "glass": 15000, "cigar": 15500,
        "cap": 33333, "cat15": 47777, "bear17": 55000, "cat25": 55555, "heartc": 60180}
 UP_RTP = 0.81
+CASHIER = os.environ.get("CASHIER", "").lstrip("@")   # username аккаунта-кассы (для подсказки «куда отправлять подарок»)
+UNK = {}   # что не распознано при последнем /sync или входящем подарке: ident -> образец
+
+def gcands(g):
+    """Все возможные идентификаторы подарка (у обычных id, у NFT чаще base_name / gift_id)."""
+    g = g or {}
+    return [str(g[f]) for f in ("id", "base_name", "gift_id", "title", "name") if g.get(f) not in (None, "")]
+
+def gresolve(g):
+    c = gcands(g)
+    for i in c:
+        k = GID.get(i)
+        if k: return k, (c[0] if c else "")
+    if c:
+        for r in db.execute("SELECT ident, k FROM gmap").fetchall():
+            if r["ident"] in c and r["k"] in VAL: return r["k"], c[0]
+    return None, (c[0] if c else "")
 
 def add_gift(oid, bid, k, uid):
     cur = db.execute("INSERT INTO gifts(oid,bid,k,uid,ts) VALUES(?,?,?,?,?) ON CONFLICT (oid) DO NOTHING",
@@ -384,22 +404,23 @@ def add_gift(oid, bid, k, uid):
 
 @dp.business_message()
 async def biz_msg(m: Message):
-    """Игрок подарил подарок кассе: зачисляем в его инвентарь. Остальное (текст не интересует) шлём владельцу для отладки."""
-    g = getattr(m, "gift", None)
+    """Игрок подарил подарок кассе: зачисляем в его инвентарь (обычные и NFT)."""
+    d = m.model_dump(mode="json", exclude_none=True)
+    g = d.get("gift") or d.get("unique_gift")
     if g is None:
-        if not m.text and OWNER_ID: await bot.send_message(OWNER_ID, "BUSINESS MSG:\n" + m.model_dump_json(exclude_none=True)[:3800])
+        if not m.text and OWNER_ID: await bot.send_message(OWNER_ID, "BUSINESS MSG:\n" + json.dumps(d, ensure_ascii=False)[:3800])
         return
     sender = m.from_user.id if m.from_user else 0
     if sender == BIZ.get("user"): return          # исходящее с самой кассы
-    try: oid, k = str(g.owned_gift_id), GID.get(str(g.gift.id))
-    except Exception: oid = k = None
+    oid = g.get("owned_gift_id"); k, ident = gresolve(g.get("gift"))
     if not oid or not k:
-        if OWNER_ID: await bot.send_message(OWNER_ID, "Неизвестный подарок (не зачислен):\n" + m.model_dump_json(exclude_none=True)[:3500])
+        UNK[ident or "?"] = g
+        if OWNER_ID: await bot.send_message(OWNER_ID, f"Неизвестный подарок (не зачислен), ident: {ident or '?'}\nСопоставить: /map {ident or 'ID'} <ключ>\n\n" + json.dumps(d, ensure_ascii=False)[:3300])
         return
     uid = None if sender == OWNER_ID else sender       # подарок от владельца = пополнение склада
     async with lock:
         if uid: db.execute("INSERT INTO users(id) VALUES(?) ON CONFLICT DO NOTHING", (uid,))
-        n = add_gift(oid, m.business_connection_id or BIZ["id"], k, uid)
+        n = add_gift(str(oid), m.business_connection_id or BIZ["id"], k, uid)
     if n and uid:
         with contextlib.suppress(Exception):
             await bot.send_message(uid, f"✅ Подарок зачислен в твой инвентарь ({k}, {VAL[k]} ⭐). Открой мини-апп.")
@@ -409,18 +430,19 @@ async def cmd_sync(m: Message):
     """Владелец: всё, что лежит на кассе и ещё не учтено, добавить на склад."""
     if not is_owner(m): return
     if not BIZ["id"]: return await m.answer("Нет подключения")
-    added = unk = 0; off = ""
+    added = unk = 0; off = ""; UNK.clear()
     for _ in range(20):
         r = await sg_call("getBusinessAccountGifts", business_connection_id=BIZ["id"], limit=100, offset=off)
         if not r.get("ok"): return await m.answer("Ошибка: " + json.dumps(r, ensure_ascii=False)[:500])
         res = r["result"]
         for it in res.get("gifts", []):
-            oid = it.get("owned_gift_id"); k = GID.get(str((it.get("gift") or {}).get("id", "")))
-            if oid is None or not k: unk += 1; continue
+            oid = it.get("owned_gift_id"); k, ident = gresolve(it.get("gift"))
+            if oid is None or not k:
+                unk += 1; UNK.setdefault(ident or "?", it); continue
             async with lock: added += add_gift(str(oid), BIZ["id"], k, None)
         off = res.get("next_offset") or ""
         if not off: break
-    await m.answer(f"Добавлено на склад: {added}. Не распознано: {unk}")
+    await m.answer(f"Добавлено на склад: {added}. Не распознано: {unk}" + ("\nПосмотреть: /unknown" if unk else ""))
 
 @dp.message(Command("stock"))
 async def cmd_stock(m: Message):
@@ -428,12 +450,41 @@ async def cmd_stock(m: Message):
     rows = db.execute("SELECT k, COUNT(*) c FROM gifts WHERE uid IS NULL GROUP BY k ORDER BY k").fetchall()
     await m.answer("Склад:\n" + ("\n".join(f"{r['k']}: {r['c']}" for r in rows) or "пусто"))
 
+@dp.message(Command("unknown"))
+async def cmd_unknown(m: Message):
+    """Владелец: что не распознано (после /sync). Показывает по одному образцу на каждый ident."""
+    if not is_owner(m): return
+    if not UNK: return await m.answer("Нераспознанного нет (или сначала сделай /sync)")
+    lines = [f"{i}: " + json.dumps((v.get("gift") if isinstance(v, dict) and "gift" in v else v), ensure_ascii=False)[:260] for i, v in list(UNK.items())[:8]]
+    await m.answer(f"Уникальных ident: {len(UNK)}\nСопоставить: /map <ident> <ключ>\nКлючи: " + ", ".join(VAL) + "\n\n" + "\n\n".join(lines))
+
+@dp.message(Command("map"))
+async def cmd_map(m: Message, command: CommandObject):
+    if not is_owner(m): return
+    p = (command.args or "").rsplit(None, 1)
+    if len(p) != 2 or p[1] not in VAL: return await m.answer("Формат: /map <ident> <ключ>\nКлючи: " + ", ".join(VAL))
+    db.execute("DELETE FROM gmap WHERE ident=?", (p[0],)); db.execute("INSERT INTO gmap(ident,k) VALUES(?,?)", (p[0], p[1]))
+    await m.answer(f"Ок: {p[0]} → {p[1]}. Теперь /sync")
+
+@dp.message(Command("queue"))
+async def cmd_queue(m: Message):
+    if not is_owner(m): return
+    rows = db.execute("SELECT oid, k, uid FROM gifts WHERE st='q'").fetchall()
+    await m.answer("Очередь вывода:\n" + ("\n".join(f"{r['oid']} · {r['k']} → {-r['uid']}" for r in rows) or "пусто"))
+
+@dp.message(Command("retry"))
+async def cmd_retry(m: Message):
+    if not is_owner(m): return
+    ok, wait, bad = await retry_queue()
+    await m.answer(f"Выведено: {ok}, ждут: {wait}, вернул игрокам из-за ошибки: {bad}")
+
 @dp.message(Command("give"))
 async def cmd_give(m: Message, command: CommandObject):
     """Тест вывода: /give <owned_gift_id> <user_id>. Реально передаёт подарок!"""
     if not is_owner(m): return
     try: oid, to = (command.args or "").split(); to = int(to)
     except Exception: return await m.answer("Формат: /give <owned_gift_id> <user_id>")
+    if not BIZ["id"]: return await m.answer("BIZ_ID не задан: подключи бота или добавь BIZ_ID в Environment")
     r = await sg_call("transferGift", business_connection_id=BIZ["id"], owned_gift_id=oid, new_owner_chat_id=to)
     if r.get("ok"): db.execute("DELETE FROM gifts WHERE oid=?", (oid,))
     await m.answer(json.dumps(r, ensure_ascii=False)[:3500])
@@ -442,13 +493,13 @@ async def cmd_give(m: Message, command: CommandObject):
 async def api_stock(request: Request):
     auth(request)
     rows = db.execute("SELECT k, COUNT(*) c FROM gifts WHERE uid IS NULL GROUP BY k").fetchall()
-    return {"stock": {r["k"]: r["c"] for r in rows}}
+    return {"stock": {r["k"]: r["c"] for r in rows}, "cashier": CASHIER}
 
 @app.get("/api/inventory")
 async def api_inventory(request: Request):
     uid = auth(request)
-    rows = db.execute("SELECT oid, k FROM gifts WHERE uid=? ORDER BY ts DESC", (uid,)).fetchall()
-    return {"items": [dict(id=r["oid"], k=r["k"], value=VAL.get(r["k"], 0)) for r in rows]}
+    rows = db.execute("SELECT oid, k, uid FROM gifts WHERE uid IN (?,?) AND (uid>0 OR st='q') ORDER BY ts DESC", (uid, -uid)).fetchall()
+    return {"items": [dict(id=r["oid"], k=r["k"], value=VAL.get(r["k"], 0), pending=r["uid"] < 0) for r in rows]}
 
 @app.post("/api/upgrade_item")
 async def api_upgrade(request: Request):
@@ -461,12 +512,12 @@ async def api_upgrade(request: Request):
         if d <= s or not 200 <= bp <= 7500: raise HTTPException(400, "Так апгрейдить нельзя")
         tgt = db.execute("SELECT oid FROM gifts WHERE k=? AND uid IS NULL LIMIT 1", (t,)).fetchone()
         if not tgt: raise HTTPException(400, "Этого подарка сейчас нет в наличии")
-        win = secrets.randbelow(10000) < bp
+        roll = secrets.randbelow(10000); win = roll < bp
         with tx():
             db.execute("UPDATE gifts SET uid=NULL WHERE oid=?", (src["oid"],))      # исходный уходит на склад в любом случае
             if win: db.execute("UPDATE gifts SET uid=? WHERE oid=?", (uid, tgt["oid"]))
             db.execute("INSERT INTO ops(uid,k,g,b,p,x,ts) VALUES(?,?,?,?,?,?,?)", (uid, "game", "upgrade", s, d if win else 0, d / s, int(time.time() * 1000)))
-    return {"win": win, "item": dict(id=tgt["oid"], k=t, value=d) if win else None}
+    return {"win": win, "roll": roll / 10000, "item": dict(id=tgt["oid"], k=t, value=d) if win else None}
 
 @app.post("/api/withdraw_gift")
 async def api_withdraw_gift(request: Request):
@@ -482,9 +533,14 @@ async def api_withdraw_gift(request: Request):
         print("GIFT WD NET ERROR:", repr(e), flush=True)
         raise HTTPException(502, "Вывод в обработке. Если подарок не пришёл, напиши в поддержку")   # остаётся зарезервированным, чтобы не выдать дважды
     if not res.get("ok"):
+        desc = str(res.get("description", ""))
         print("GIFT WD FAIL:", res, flush=True)
+        if "TOO_NEW" in desc:   # подключению кассы ещё нет нужного срока: оставляем в резерве, фон передаст позже
+            async with lock: db.execute("UPDATE gifts SET st='q' WHERE oid=?", (oid,))
+            if OWNER_ID: await bot.send_message(OWNER_ID, f"Заявка на вывод в очереди: {oid} → {uid}\nОтправится сама, как только передача станет доступна (/retry — проверить сейчас)")
+            return {"ok": True, "queued": True}
         async with lock: db.execute("UPDATE gifts SET uid=? WHERE oid=?", (uid, oid))
-        raise HTTPException(400, "Вывод не удался: " + str(res.get("description", "ошибка")))
+        raise HTTPException(400, "Вывод не удался, попробуй позже")
     async with lock:
         db.execute("DELETE FROM gifts WHERE oid=?", (oid,))
         db.execute("INSERT INTO ops(uid,k,g,ts) VALUES(?,?,?,?)", (uid, "gwd", oid, int(time.time() * 1000)))
@@ -515,8 +571,39 @@ async def paid(m: Message):
             db.execute("UPDATE users SET balance=balance+?, deposited=deposited+? WHERE id=?", (a, a, m.from_user.id))
     await m.answer(f"✅ Пополнение зачислено: {a} ⭐\nОткрой мини-апп, чтобы играть.")
 
+rlock = asyncio.Lock()
+async def retry_queue():
+    """Пробует передать подарки из очереди. Возвращает (выведено, ждут, возвращено игроку)."""
+    ok = wait = bad = 0
+    async with rlock:
+        for r in db.execute("SELECT oid, bid, uid FROM gifts WHERE st='q'").fetchall():
+            to = -r["uid"]
+            try: res = await sg_call("transferGift", business_connection_id=r["bid"] or BIZ["id"], owned_gift_id=r["oid"], new_owner_chat_id=to)
+            except Exception as e:
+                print("RETRY NET ERROR:", repr(e), flush=True); wait += 1; continue
+            if res.get("ok"):
+                async with lock:
+                    db.execute("DELETE FROM gifts WHERE oid=?", (r["oid"],))
+                    db.execute("INSERT INTO ops(uid,k,g,ts) VALUES(?,?,?,?)", (to, "gwd", r["oid"], int(time.time() * 1000)))
+                ok += 1
+                with contextlib.suppress(Exception): await bot.send_message(to, "✅ Подарок выведен на твой аккаунт")
+            elif "TOO_NEW" in str(res.get("description", "")): wait += 1
+            else:
+                print("RETRY FAIL:", res, flush=True)
+                async with lock: db.execute("UPDATE gifts SET uid=?, st=NULL WHERE oid=?", (to, r["oid"]))
+                bad += 1
+                with contextlib.suppress(Exception): await bot.send_message(to, "Вывод подарка не удался, он вернулся в инвентарь")
+    return ok, wait, bad
+
+async def retry_loop():
+    while True:
+        await asyncio.sleep(600)
+        try: await retry_queue()
+        except Exception as e: print("RETRY LOOP ERROR:", repr(e), flush=True)
+
 @app.on_event("startup")
-async def start(): asyncio.create_task(dp.start_polling(bot))
+async def start():
+    asyncio.create_task(dp.start_polling(bot)); asyncio.create_task(retry_loop())
 
 # ---------------------------------------------------------------------------
 # Работа с API StaticGram (счета, вывод, возвраты): используй документацию
