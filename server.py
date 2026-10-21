@@ -343,6 +343,31 @@ async def cmd_delpromo(m: Message, command: CommandObject):
     db.execute("UPDATE promos SET active=0 WHERE code=?", (code,))
     await m.answer(f"Промокод {code} выключен. Кто уже активировал, звёзды оставит.")
 
+# ---- Business-подключение: бот управляет подарками аккаунта-кассы ----
+from aiogram.types import BusinessConnection
+BIZ = {"id": os.environ.get("BIZ_ID", "")}   # id подключения; можно задать в Environment, чтобы не терялся при перезапуске
+
+@dp.business_connection()
+async def biz_conn(c: BusinessConnection):
+    if c.is_enabled: BIZ["id"] = c.id
+    print("BUSINESS CONNECTION:", c.id, c.user.id, c.is_enabled, flush=True)
+    if OWNER_ID: await bot.send_message(OWNER_ID, f"Business: {'подключено' if c.is_enabled else 'отключено'}\nID: {c.id}\nСохрани его в Environment как BIZ_ID")
+
+@dp.message(Command("gifts"))
+async def cmd_gifts(m: Message):
+    """Только владелец: показывает подарки, лежащие на аккаунте-кассе."""
+    if not is_owner(m): return
+    if not BIZ["id"]: return await m.answer("Нет подключения. Подключи бота: Настройки → Business → Чат-боты")
+    r = await sg_call("getBusinessAccountGifts", business_connection_id=BIZ["id"], limit=20)
+    await m.answer(json.dumps(r, ensure_ascii=False)[:3800] or "пусто")
+
+@dp.business_message()
+async def biz_msg(m: Message):
+    """Отладка: присылает владельцу сырые данные нетекстовых сообщений (например, полученного подарка)."""
+    if m.text or not OWNER_ID: return
+    await bot.send_message(OWNER_ID, "BUSINESS MSG:\n" + m.model_dump_json(exclude_none=True)[:3800])
+
+
 @dp.message(Dep.amount, F.text)
 async def custom_amount(m: Message, state: FSMContext):
     t = m.text.replace(" ", "")
@@ -378,5 +403,8 @@ async def start(): asyncio.create_task(dp.start_polling(bot))
 # ---------------------------------------------------------------------------
 
 # ---- Кейсы (файл cases.py лежит рядом) ----
-import cases
-cases.setup(app, auth, db, tx, lock, PG, gate)
+try:
+    import cases
+    cases.setup(app, auth, db, tx, lock, PG, gate)
+except ImportError:
+    print("cases.py не найден, кейсы отключены", flush=True)
