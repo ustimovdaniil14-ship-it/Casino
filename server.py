@@ -492,6 +492,20 @@ async def cmd_map(m: Message, command: CommandObject):
             with contextlib.suppress(Exception): await bot.send_message(r["uid"], f"✅ Подарок зачислен в твой инвентарь ({p[1]}, {VAL[p[1]]} ⭐). Открой мини-апп.")
     await m.answer(f"Ок: {p[0]} → {p[1]}. Зачислено подарков игроков: {len(rows)}. Остальное с кассы: /sync")
 
+@dp.message(Command("credit"))
+async def cmd_credit(m: Message, command: CommandObject):
+    """Владелец: выдать игроку подарок со склада в инвентарь (для тестов и компенсаций). /credit <ключ> <user_id>"""
+    if not is_owner(m): return
+    p = (command.args or "").split()
+    if len(p) != 2 or p[0] not in VAL or not p[1].lstrip("-").isdigit(): return await m.answer("Формат: /credit <ключ> <user_id>\nПример: /credit sbear 1780245612")
+    uid = int(p[1])
+    async with lock:
+        g = db.execute("SELECT oid FROM gifts WHERE k=? AND uid IS NULL LIMIT 1", (p[0],)).fetchone()
+        if not g: return await m.answer("Такого подарка нет на складе")
+        db.execute("INSERT INTO users(id) VALUES(?) ON CONFLICT DO NOTHING", (uid,))
+        db.execute("UPDATE gifts SET uid=? WHERE oid=?", (uid, g["oid"]))
+    await m.answer(f"Выдано: {p[0]} → {uid}. Открой мини-апп.")
+
 @dp.message(Command("queue"))
 async def cmd_queue(m: Message):
     if not is_owner(m): return
