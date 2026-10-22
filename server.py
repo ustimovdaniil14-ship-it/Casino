@@ -89,7 +89,7 @@ db.execute(f"CREATE TABLE IF NOT EXISTS gifts(oid TEXT PRIMARY KEY, bid TEXT, k 
 db.execute("CREATE INDEX IF NOT EXISTS gifts_uid ON gifts(uid, k)")
 try: db.execute("ALTER TABLE gifts ADD COLUMN st TEXT")   # st='q' = вывод в очереди (касса ещё не может передать)
 except Exception: pass
-try: db.execute("ALTER TABLE gifts ADD COLUMN ident TEXT")   # k='?' = подарок игрока ещё не сопоставлен с каталогом (ждёт /map)
+try: db.execute("ALTER TABLE gifts ADD COLUMN ident TEXT")   # k=UNM = подарок игрока ещё не сопоставлен с каталогом (ждёт /map)
 except Exception: pass
 db.execute("CREATE TABLE IF NOT EXISTS gmap(ident TEXT PRIMARY KEY, k TEXT)")   # ручное сопоставление: id/название подарка -> наш ключ
 
@@ -359,7 +359,16 @@ BIZ = {"id": os.environ.get("BIZ_ID", ""), "user": int(os.environ.get("BIZ_USER"
 async def biz_conn(c: BusinessConnection):
     if c.is_enabled: BIZ["id"] = c.id; BIZ["user"] = c.user.id
     print("BUSINESS CONNECTION:", c.id, c.user.id, c.is_enabled, flush=True)
-    if OWNER_ID: await bot.send_message(OWNER_ID, f"Business: {'подключено' if c.is_enabled else 'отключено'}\nID: {c.id}\nСохрани его в Environment как BIZ_ID")
+    if OWNER_ID: await bot.send_message(OWNER_ID, f"Business: {'подключено' if c.is_enabled else 'отключено'}\nBIZ_ID: {c.id}\nBIZ_USER: {c.user.id}\nСохрани оба в Environment, иначе после перезапуска вернутся старые")
+
+@dp.message(Command("wipe"))
+async def cmd_wipe(m: Message, command: CommandObject):
+    """Владелец: стереть ВСЕ записи о подарках (склад, инвентари, очередь). Нужно после смены аккаунта кассы."""
+    if not is_owner(m): return
+    n = db.execute("SELECT COUNT(*) AS c FROM gifts").fetchone()["c"]
+    if (command.args or "").strip() != "yes": return await m.answer(f"Это удалит записи обо всех подарках ({n} шт): склад, инвентари игроков, очередь вывода. Сами подарки на аккаунте не трогаются.\nПодтверди: /wipe yes")
+    db.execute("DELETE FROM gifts"); UNK.clear()
+    await m.answer(f"Удалено записей: {n}. Теперь /sync")
 
 @dp.message(Command("gifts"))
 async def cmd_gifts(m: Message):
@@ -381,6 +390,7 @@ VAL = {"heart": 15, "bear": 15, "gift": 25, "rose": 25, "cake": 50, "bouq": 50, 
        "statue": 10000, "car": 10000, "hat": 10500, "gring": 11000, "watch": 12000, "book": 12500, "glass": 15000, "cigar": 15500,
        "cap": 33333, "cat15": 47777, "bear17": 55000, "cat25": 55555, "heartc": 60180}
 UP_RTP = 0.81
+UNM = "_unm"   # метка k для подарка игрока, ещё не сопоставленного с каталогом
 CASHIER = os.environ.get("CASHIER", "").lstrip("@")   # username аккаунта-кассы (для подсказки «куда отправлять подарок»)
 UNK = {}   # что не распознано при последнем /sync или входящем подарке: ident -> образец
 
@@ -421,7 +431,7 @@ async def biz_msg(m: Message):
         if oid and sender_ != OWNER_ID:   # подарок игрока не теряем: храним как «?», зачислится после /map
             async with lock:
                 db.execute("INSERT INTO users(id) VALUES(?) ON CONFLICT DO NOTHING", (sender_,))
-                add_gift(str(oid), m.business_connection_id or BIZ["id"], "?", sender_, ident or "?")
+                add_gift(str(oid), m.business_connection_id or BIZ["id"], UNM, sender_, ident or "?")
             with contextlib.suppress(Exception): await bot.send_message(sender_, "Подарок получен. Он появится в инвентаре после проверки.")
         if OWNER_ID: await bot.send_message(OWNER_ID, f"Неизвестный подарок (не зачислен), ident: {ident or '?'}\nСопоставить: /map {ident or 'ID'} <ключ>\n\n" + json.dumps(d, ensure_ascii=False)[:3300])
         return
@@ -475,7 +485,7 @@ async def cmd_map(m: Message, command: CommandObject):
     p = (command.args or "").rsplit(None, 1)
     if len(p) != 2 or p[1] not in VAL: return await m.answer("Формат: /map <ident> <ключ>\nКлючи: " + ", ".join(VAL))
     db.execute("DELETE FROM gmap WHERE ident=?", (p[0],)); db.execute("INSERT INTO gmap(ident,k) VALUES(?,?)", (p[0], p[1]))
-    rows = db.execute("SELECT oid, uid FROM gifts WHERE k='?' AND ident=?", (p[0], p[0])).fetchall()
+    rows = db.execute("SELECT oid, uid FROM gifts WHERE k=? AND ident=?", (UNM, p[0])).fetchall()
     for r in rows: db.execute("UPDATE gifts SET k=?, ident=NULL WHERE oid=?", (p[1], r["oid"]))
     for r in rows:
         if r["uid"] and r["uid"] > 0:
@@ -514,7 +524,7 @@ async def api_stock(request: Request):
 @app.get("/api/inventory")
 async def api_inventory(request: Request):
     uid = auth(request)
-    rows = db.execute("SELECT oid, k, uid FROM gifts WHERE uid IN (?,?) AND (uid>0 OR st='q') AND k<>'?' ORDER BY ts DESC", (uid, -uid)).fetchall()
+    rows = db.execute("SELECT oid, k, uid FROM gifts WHERE uid IN (?,?) AND (uid>0 OR st='q') AND k<>? ORDER BY ts DESC", (uid, -uid, UNM)).fetchall()
     return {"items": [dict(id=r["oid"], k=r["k"], value=VAL.get(r["k"], 0), pending=r["uid"] < 0) for r in rows]}
 
 @app.post("/api/upgrade_item")
@@ -522,7 +532,7 @@ async def api_upgrade(request: Request):
     uid = auth(request); gate(uid); b = await request.json(); t = b.get("target")
     if t not in VAL: raise HTTPException(400, "Неизвестный подарок")
     async with lock:
-        src = db.execute("SELECT oid, k FROM gifts WHERE oid=? AND uid=? AND k<>'?'", (str(b.get("id")), uid)).fetchone()
+        src = db.execute("SELECT oid, k FROM gifts WHERE oid=? AND uid=? AND k<>?", (str(b.get("id")), uid, UNM)).fetchone()
         if not src: raise HTTPException(400, "Подарок не найден")
         s, d = VAL[src["k"]], VAL[t]; bp = int(UP_RTP * s / d * 10000)
         if d <= s or not 200 <= bp <= 7500: raise HTTPException(400, "Так апгрейдить нельзя")
@@ -540,7 +550,7 @@ async def api_withdraw_gift(request: Request):
     """Вывод подарка игроку: резервируем в БД, передаём через transferGift, при отказе возвращаем."""
     uid = auth(request); gate(uid); oid = str((await request.json()).get("id"))
     async with lock:
-        row = db.execute("SELECT oid, bid FROM gifts WHERE oid=? AND uid=? AND k<>'?'", (oid, uid)).fetchone()
+        row = db.execute("SELECT oid, bid FROM gifts WHERE oid=? AND uid=? AND k<>?", (oid, uid, UNM)).fetchone()
         if not row: raise HTTPException(400, "Подарок не найден")
         if not (row["bid"] or BIZ["id"]): raise HTTPException(503, "Касса не подключена")
         db.execute("UPDATE gifts SET uid=? WHERE oid=?", (-uid, oid))
